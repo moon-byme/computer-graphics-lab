@@ -180,8 +180,8 @@ public class TransformacoesCoordenadas extends JFrame {
                                           tela.getHeight(), centrado);
                     Ponto ponto = ndcToUser(ndc.x, ndc.y, mundo[0], mundo[1],
                                             mundo[2], mundo[3], centrado);
-                    xCampo.setText(String.format(Locale.US, "%.8f", ponto.x));
-                    yCampo.setText(String.format(Locale.US, "%.8f", ponto.y));
+                    xCampo.setText(String.format(Locale.US, "%.4f", ponto.x));
+                    yCampo.setText(String.format(Locale.US, "%.4f", ponto.y));
                     atualizar(false);
                 } catch (IllegalArgumentException erro) {
                     JOptionPane.showMessageDialog(TransformacoesCoordenadas.this,
@@ -231,7 +231,7 @@ public class TransformacoesCoordenadas extends JFrame {
             Pixel dc = ndcToDc(ndc.x, ndc.y, largura, altura, centrado);
             tela.drawPixel(dc.x, dc.y);
             resultado.setText(String.format(Locale.US,
-                "Mundo=(%.6f, %.6f) | NDC=(%.6f, %.6f) | DC=(%d, %d) | Display=%d x %d | RGB=#00FF00",
+                "Mundo=(%.4f, %.4f) | NDC=(%.4f, %.4f) | DC=(%d, %d) | Display=%d x %d | RGB=#00FF00",
                 x, y, ndc.x, ndc.y, dc.x, dc.y, largura, altura));
         } catch (IllegalArgumentException erro) {
             tela.limpar();
