@@ -12,15 +12,61 @@ Disciplina: Computação Gráfica — UEPB. Professor: Robson Pequeno de Sousa.
 
 No terminal, verifique: `java -version` e `javac -version`.
 
-## 1. Transformações de coordenadas
+## Estrutura do projeto
 
-Arquivo: `TransformacoesCoordenadas.java`.
+O código segue o padrão **MVC**, com um pacote por aplicação:
 
-Execute no terminal, a partir da pasta do repositório:
+```text
+src/
+├── transformacoes/                      # 1. Transformações de coordenadas
+│   ├── TransformacoesCoordenadas.java   # ponto de entrada (main)
+│   ├── model/
+│   │   ├── Ponto.java                   # coordenadas reais (mundo/NDC)
+│   │   ├── Pixel.java                   # posição no dispositivo
+│   │   └── TransformadorCoordenadas.java# userToNdc, ndcToUser, ndcToDc, inpToNdc
+│   ├── view/
+│   │   ├── TransformacoesView.java      # janela e campos (sem regras de negócio)
+│   │   └── Tela.java                    # frame buffer raster (BufferedImage)
+│   ├── controller/
+│   │   └── TransformacoesController.java# eventos, validação e orquestração
+│   └── teste/
+│       └── TransformacoesCoordenadasTeste.java   # --test
+└── tabelacores/                         # 2. Exercício complementar
+    ├── TabelaCores.java                 # ponto de entrada (main)
+    ├── model/
+    │   └── Paleta.java                  # 4096 entradas RGB de 24 bits
+    ├── view/
+    │   └── TabelaCoresView.java         # janela, grade de amostras e detalhes
+    ├── controller/
+    │   └── TabelaCoresController.java   # eventos, paginação e edição da paleta
+    ├── util/
+    │   └── Hexadecimal.java             # leitura/validação de valores hexadecimais
+    └── teste/
+        └── TabelaCoresTeste.java        # --test
+```
+
+- **Model**: dados e regras (transformações, paleta), sem dependência de Swing.
+- **View**: componentes Swing; expõe getters/setters e registro de listeners.
+- **Controller**: recebe os eventos da View, valida a entrada e atualiza Model e View.
+
+## Compilação
+
+Na raiz do repositório:
 
 ```powershell
-javac TransformacoesCoordenadas.java
-java TransformacoesCoordenadas
+javac -d out (Get-ChildItem -Recurse src -Filter *.java).FullName
+```
+
+No Linux/macOS: `javac -d out $(find src -name "*.java")`.
+
+## 1. Transformações de coordenadas
+
+Pacote: `transformacoes` (ponto de entrada: `src/transformacoes/TransformacoesCoordenadas.java`).
+
+Após compilar, execute a partir da pasta do repositório:
+
+```powershell
+java -cp out transformacoes.TransformacoesCoordenadas
 ```
 
 Na interface:
@@ -75,16 +121,15 @@ O ponto deve permanecer na mesma posição do display ao alternar o cenário.
 Teste automático, sem abrir a interface:
 
 ```powershell
-java TransformacoesCoordenadas --test
+java -cp out transformacoes.TransformacoesCoordenadas --test
 ```
 
 ## 2. Exercício complementar — Tabela de cores
 
-Arquivo: `TabelaCores.java`.
+Pacote: `tabelacores` (ponto de entrada: `src/tabelacores/TabelaCores.java`).
 
 ```powershell
-javac TabelaCores.java
-java TabelaCores
+java -cp out tabelacores.TabelaCores
 ```
 
 O exercício distingue o **índice armazenado no pixel (12 bits)** da **cor armazenada na paleta (24 bits)**:
@@ -109,5 +154,5 @@ Exemplos iniciais:
 Teste automático:
 
 ```powershell
-java TabelaCores --test
+java -cp out tabelacores.TabelaCores --test
 ```
