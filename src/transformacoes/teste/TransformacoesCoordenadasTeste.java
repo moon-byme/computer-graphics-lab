@@ -2,9 +2,8 @@ package transformacoes.teste;
 
 import transformacoes.model.Pixel;
 import transformacoes.model.Ponto;
-import transformacoes.view.Tela;
-
 import static transformacoes.model.TransformadorCoordenadas.*;
+import transformacoes.view.Tela;
 
 /* Teste matematico sem interface: java -cp out transformacoes.TransformacoesCoordenadas --test */
 public final class TransformacoesCoordenadasTeste {
@@ -30,16 +29,17 @@ public final class TransformacoesCoordenadasTeste {
                 throw new AssertionError("Extremos");
         }
         Tela telaTeste = new Tela();
-        telaTeste.setSize(801, 601);
-        telaTeste.limpar();
+        telaTeste.setResolucao(801, 601);
         telaTeste.drawPixel(400, 300);
+        if (telaTeste.getImagem().getWidth() != 801 || telaTeste.getImagem().getHeight() != 601)
+            throw new AssertionError("Resolucao do frame buffer");
         int ativos = 0;
         for (int y = 0; y < 601; y++) {
             for (int x = 0; x < 801; x++) {
-                if ((telaTeste.getImagem().getRGB(x, y) & 0xFFFFFF) != 0) {
+                int rgb = telaTeste.getImagem().getRGB(x, y) & 0xFFFFFF;
+                if (rgb != Tela.COR_FUNDO) {
                     ativos++;
-                    if (x != 400 || y != 300
-                            || (telaTeste.getImagem().getRGB(x, y) & 0xFFFFFF) != 0x00FF00) {
+                    if (x != 400 || y != 300 || rgb != Tela.COR_PIXEL) {
                         throw new AssertionError("Pixel/coloracao");
                     }
                 }
