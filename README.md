@@ -1,6 +1,6 @@
 # Laboratório I — Computação Gráfica
 
-Implementação em Java das transformações entre coordenadas do mundo, coordenadas normalizadas do dispositivo (NDC) e coordenadas do display, com ativação de **um único pixel verde (`#00FF00`)**. Inclui o exercício complementar da aula G2 sobre **paleta RGB de 24 bits endereçada por índices de 12 bits**.
+Implementação em Java das transformações entre coordenadas do mundo, coordenadas normalizadas do dispositivo (NDC) e coordenadas do display, com desenho de pontos em verde (`#00FF00`) e estrutura de rasterização preparada para retas e circunferências. Inclui o exercício complementar da aula G2 sobre **paleta RGB de 24 bits endereçada por índices de 12 bits**.
 
 Disciplina: Computação Gráfica — UEPB. Professor: Robson Pequeno de Sousa.
 
@@ -49,6 +49,12 @@ src/
 - **View**: componentes Swing; expõe getters/setters e registro de listeners.
 - **Controller**: recebe os eventos da View, valida a entrada e atualiza Model e View.
 
+## Algoritmos de rasterização
+
+A interface `AlgoritmoRasterizacao` define uma saída comum em pixels DC para que os algoritmos não precisem conhecer nem alterar o renderer (`Tela.drawPixels`). A interface aceita as primitivas ponto, reta e circunferência. O ponto usa diretamente `drawPixel`; o renderer também aceita uma coleção de pixels para as formas compostas. O seletor lista os cinco algoritmos planejados: DDA e Bresenham para retas; polinomial, trigonométrico e ponto médio para circunferências. As implementações ainda serão feitas e devem ser registradas no controller com `registrarAlgoritmo`.
+
+Cada algoritmo receberá uma `FormaRasterizacao` com coordenadas DC (ponto, reta com início/fim ou circunferência com centro/raio inteiro em pixels DC) e retornará os pixels a ativar. A interface confere se a forma corresponde ao tipo do algoritmo. Os campos de ponto inicial/centro e de reta na interface são informados em coordenadas do mundo e convertidos para DC antes da rasterização. Até as implementações serem registradas, a interface exibe um aviso e não desenha as retas/circunferências. Ao implementar Bresenham para reta, trate os demais octantes por simetria, refletindo/trocando os eixos e restaurando as coordenadas ao final.
+
 ## Compilação
 
 Na raiz do repositório:
@@ -72,12 +78,12 @@ java -cp out transformacoes.TransformacoesCoordenadas
 Na interface:
 
 1. Defina a janela do mundo (`xmin`, `xmax`, `ymin`, `ymax`), com `xmin < xmax` e `ymin < ymax`.
-2. Informe o ponto `(x, y)` da janela.
+2. Selecione **Ponto**, **Reta** ou **Circunferência**. Informe o ponto ou centro `(x, y)`; para reta, informe também o ponto final `(x final, y final)`; para circunferência, informe o raio em pixels DC.
 3. Selecione um dos dois cenários NDC: `[0,1] × [0,1]` ou `[-1,1] × [-1,1]`.
-4. Clique em **Ativar pixel**. A área preta mostra um pixel verde na posição calculada; os resultados numéricos são exibidos abaixo dela.
-5. Opcionalmente, clique na área preta para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
+4. Para ponto, clique em **Desenhar** para ativar o pixel. Para reta ou circunferência, selecione o algoritmo correspondente e clique em **Desenhar**; até a implementação e registro do algoritmo, a interface informa que o desenho está pendente.
+5. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
 
-O framebuffer mantém a resolução original e armazena exatamente um pixel verde. Use **Ampliação** (1×, 2×, 4× ou 8×) para inspecionar os pixels; a opção **Grade** desenha limites entre pixels quando a ampliação é maior que 1×. A ampliação e a grade afetam apenas a visualização, não alteram os pixels armazenados nem as coordenadas DC. Cliques na imagem ampliada são convertidos de volta às coordenadas do display original antes da transformação inversa. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
+O framebuffer mantém a resolução original; pontos e primitivas são armazenados como pixels verdes. Use **Ampliação** (1×, 2×, 4× ou 8×) para inspecionar os pixels; a opção **Grade** desenha limites entre pixels quando a ampliação é maior que 1×. A ampliação e a grade afetam apenas a visualização, não alteram os pixels armazenados nem as coordenadas DC. Cliques na imagem ampliada são convertidos de volta às coordenadas do display original antes da transformação inversa. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
 
 ### Procedimentos solicitados na aula G2
 

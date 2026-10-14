@@ -2,10 +2,16 @@ package transformacoes.controller;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import javax.swing.*;
+import transformacoes.model.AlgoritmoRasterizacao;
+import transformacoes.model.FormaRasterizacao;
 import transformacoes.model.Pixel;
 import transformacoes.model.Ponto;
+import transformacoes.model.TipoAlgoritmo;
 import transformacoes.model.TransformadorCoordenadas;
 import transformacoes.view.TransformacoesView;
 
@@ -16,12 +22,16 @@ public class TransformacoesController {
     private static final String VAZIO = "\u2014";
 
     private final TransformacoesView view;
+    private final Map<TipoAlgoritmo, AlgoritmoRasterizacao> algoritmos =
+            new EnumMap<>(TipoAlgoritmo.class);
 
     public TransformacoesController(TransformacoesView view) {
         this.view = view;
 
         view.addMostrarListener(e -> atualizar(true));
         view.addVisualizacaoListener(e -> aplicarVisualizacao());
+        view.addAlgoritmoListener(e -> selecionarAlgoritmo());
+        view.addFormaListener(e -> selecionarForma());
         view.addCenarioListener(e -> {
             view.limparInversa();
             atualizar(false);
@@ -35,6 +45,42 @@ public class TransformacoesController {
 
     private void aplicarVisualizacao() {
         view.setVisualizacaoDisplay(view.getAmpliacao(), view.isGradeAtiva());
+    }
+
+    private void selecionarAlgoritmo() {
+        TipoAlgoritmo algoritmo = view.getAlgoritmoSelecionado();
+        if (algoritmo != null) {
+            view.setStatus("Selecionado: " + algoritmo + ".", false);
+        }
+    }
+
+    private void selecionarForma() {
+        FormaRasterizacao.Tipo tipo = view.getTipoFormaSelecionado();
+        view.setAlgoritmosParaForma(tipo);
+        view.setStatus(tipo == FormaRasterizacao.Tipo.PONTO
+                ? "Ponto pronto para desenhar."
+                : "Forma selecionada. Informe os dados e escolha um algoritmo.", false);
+    }
+
+    public void registrarAlgoritmo(AlgoritmoRasterizacao algoritmo) {
+        if (algoritmo == null) {
+            throw new IllegalArgumentException("O algoritmo nao pode ser nulo.");
+        }
+        if (algoritmo.getTipo() == null) {
+            throw new IllegalArgumentException("O algoritmo deve informar seu tipo.");
+        }
+        algoritmos.put(algoritmo.getTipo(), algoritmo);
+    }
+
+    private static int lerRaio(String texto) {
+        try {
+            int raio = Integer.parseInt(texto.trim());
+            if (raio >= 0 && raio <= RESOLUCAO_MAXIMA) return raio;
+        } catch (NumberFormatException ignorada) {
+            // tratada abaixo com a mesma mensagem
+        }
+        throw new IllegalArgumentException("O raio deve ser um inteiro entre 0 e "
+                + RESOLUCAO_MAXIMA + " pixels DC.");
     }
 
     private static double lerNumero(String texto) {
@@ -65,6 +111,17 @@ public class TransformacoesController {
 
     private static String rotuloNdc(boolean centrado) {
         return centrado ? "NDC [-1, 1]" : "NDC [0, 1]";
+    }
+
+    private static Pixel converterParaDc(double x, double y, double[] janela, int largura,
+                                         int altura, boolean centrado) {
+        Ponto ndc = TransformadorCoordenadas.userToNdc(x, y, janela[0], janela[1],
+                                                       janela[2], janela[3], centrado);
+        return TransformadorCoordenadas.ndcToDc(ndc.x, ndc.y, largura, altura, centrado);
+    }
+
+    private static boolean dentroDaJanela(double x, double y, double[] janela) {
+        return x >= janela[0] && x <= janela[1] && y >= janela[2] && y <= janela[3];
     }
 
     private double[] lerJanela() {
@@ -129,7 +186,7 @@ public class TransformacoesController {
         }
     }
 
-    /* Transformacao direta: mundo -> NDC -> dispositivo, ativando um unico pixel. */
+    /* Transformacao direta: mundo -> NDC -> dispositivo -> rasterizador -> framebuffer. */
     private void atualizar(boolean mostrarErro) {
         try {
             double[] janela = lerJanela();
@@ -139,26 +196,65 @@ public class TransformacoesController {
             int altura = view.getAlturaTela();
             boolean centrado = view.isCentrado();
             view.limparTela();
-            if (x < janela[0] || x > janela[1] || y < janela[2] || y > janela[3]) {
+            if (!dentroDaJanela(x, y, janela)) {
+                throw new IllegalArgumentException("A coordenada inicial está fora da janela do mundo.");
+            }
+            Pixel inicio = converterParaDc(x, y, janela, largura, altura, centrado);
+            FormaRasterizacao.Tipo tipo = view.getTipoFormaSelecionado();
+            if (tipo == FormaRasterizacao.Tipo.PONTO) {
+                Ponto ndc = TransformadorCoordenadas.userToNdc(x, y, janela[0], janela[1],
+                                                               janela[2], janela[3], centrado);
+                view.drawPixel(inicio.x, inicio.y);
                 view.setResultados(new String[][] {
                     {"Mundo", formatar(x), formatar(y)},
-                    {rotuloNdc(centrado), VAZIO, VAZIO},
-                    {"Dispositivo (DC)", VAZIO, VAZIO}
+                    {rotuloNdc(centrado), formatar(ndc.x), formatar(ndc.y)},
+                    {"Dispositivo (DC)", String.valueOf(inicio.x), String.valueOf(inicio.y)}
                 });
-                view.setStatus("Ponto fora da janela do mundo: nenhum pixel ativado.", true);
+                view.setStatus(String.format("Pixel #00FF00 ativado em DC (%d, %d) num display de %d × %d.",
+                                             inicio.x, inicio.y, largura, altura), false);
                 return;
             }
-            Ponto ndc = TransformadorCoordenadas.userToNdc(x, y, janela[0], janela[1],
-                                                           janela[2], janela[3], centrado);
-            Pixel dc = TransformadorCoordenadas.ndcToDc(ndc.x, ndc.y, largura, altura, centrado);
-            view.drawPixel(dc.x, dc.y);
+            FormaRasterizacao forma;
+            String descricao;
+            if (tipo == FormaRasterizacao.Tipo.RETA) {
+                double x2 = lerNumero(view.getX2Texto());
+                double y2 = lerNumero(view.getY2Texto());
+                if (!dentroDaJanela(x2, y2, janela)) {
+                    throw new IllegalArgumentException("A coordenada final está fora da janela do mundo.");
+                }
+                Pixel fim = converterParaDc(x2, y2, janela, largura, altura, centrado);
+                forma = FormaRasterizacao.reta(inicio, fim);
+                descricao = String.format("Reta DC (%d, %d) até (%d, %d)",
+                                          inicio.x, inicio.y, fim.x, fim.y);
+            } else {
+                int raio = lerRaio(view.getRaioTexto());
+                forma = FormaRasterizacao.circunferencia(inicio, raio);
+                descricao = String.format("Circunferência DC centro (%d, %d), raio %d px",
+                                          inicio.x, inicio.y, raio);
+            }
+            TipoAlgoritmo tipoAlgoritmo = view.getAlgoritmoSelecionado();
+            if (tipoAlgoritmo == null) {
+                throw new IllegalArgumentException("Selecione um algoritmo para essa primitiva.");
+            }
+            AlgoritmoRasterizacao algoritmo = algoritmos.get(tipoAlgoritmo);
+            if (algoritmo == null) {
+                view.setResultados(new String[][] {
+                    {"Mundo (início/centro)", formatar(x), formatar(y)},
+                    {"Primitiva", tipo.toString(), "DC (" + inicio.x + ", " + inicio.y + ")"},
+                    {"Algoritmo", tipoAlgoritmo.toString(), "pendente"}
+                });
+                view.setStatus("O algoritmo selecionado ainda não foi registrado; nenhum pixel foi desenhado.",
+                               true);
+                return;
+            }
+            List<Pixel> pixels = algoritmo.rasterizar(forma);
+            view.drawPixels(pixels);
             view.setResultados(new String[][] {
                 {"Mundo", formatar(x), formatar(y)},
-                {rotuloNdc(centrado), formatar(ndc.x), formatar(ndc.y)},
-                {"Dispositivo (DC)", String.valueOf(dc.x), String.valueOf(dc.y)}
+                {"Primitiva", tipo.toString(), descricao},
+                {"Pixels desenhados", String.valueOf(pixels.size()), "Algoritmo: " + tipoAlgoritmo}
             });
-            view.setStatus(String.format("Pixel #00FF00 ativado em DC (%d, %d) num display de %d × %d.",
-                                         dc.x, dc.y, largura, altura), false);
+            view.setStatus(descricao + " desenhada com " + tipoAlgoritmo + ".", false);
         } catch (IllegalArgumentException erro) {
             view.limparTela();
             view.limparResultados();

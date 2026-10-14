@@ -7,6 +7,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
+import transformacoes.model.FormaRasterizacao;
+import transformacoes.model.TipoAlgoritmo;
 import transformacoes.model.Pixel;
 
 /** Janela do Laboratorio I: apenas componentes visuais, sem regras de negocio. */
@@ -45,10 +47,20 @@ public class TransformacoesView extends JFrame {
     private final JTextField ymaxCampo = new JTextField("25", 5);
     private final JTextField xCampo = new JTextField("10", 5);
     private final JTextField yCampo = new JTextField("15", 5);
+    private final JLabel xRotulo = new JLabel("x");
+    private final JLabel yRotulo = new JLabel("y");
     private final JComboBox<String> cenario = new JComboBox<>(new String[] {
         "[0,1] x [0,1]", "[-1,1] x [-1,1]"
     });
-    private final JButton mostrar = new JButton("Ativar pixel");
+    private final JButton mostrar = new JButton("Desenhar");
+    private final JComboBox<FormaRasterizacao.Tipo> tipoForma =
+            new JComboBox<>(FormaRasterizacao.Tipo.values());
+    private final JLabel x2Rotulo = new JLabel("x final");
+    private final JTextField x2Campo = new JTextField("20", 5);
+    private final JLabel y2Rotulo = new JLabel("y final");
+    private final JTextField y2Campo = new JTextField("20", 5);
+    private final JLabel raioRotulo = new JLabel("Raio (px DC)");
+    private final JTextField raioCampo = new JTextField("50", 5);
 
     /* Display e escolha da resolucao. */
     private final Tela tela = new Tela();
@@ -62,6 +74,7 @@ public class TransformacoesView extends JFrame {
     private final JButton aplicarResolucao = new JButton("Aplicar");
     private final JComboBox<String> ampliacao = new JComboBox<>(new String[] {"1×", "2×", "4×", "8×"});
     private final JCheckBox grade = new JCheckBox("Grade");
+    private final JComboBox<TipoAlgoritmo> algoritmos = new JComboBox<>(TipoAlgoritmo.values());
 
     /* Resultados. */
     private final DefaultTableModel resultados = criarModelo();
@@ -80,7 +93,10 @@ public class TransformacoesView extends JFrame {
         add(criarPainelLateral(), BorderLayout.EAST);
         add(criarBarraStatus(), BorderLayout.SOUTH);
 
+        tipoForma.addActionListener(e -> atualizarCamposForma(getTipoFormaSelecionado()));
+        setAlgoritmosParaForma(FormaRasterizacao.Tipo.PONTO);
         opcoesResolucao[RESOLUCAO_INICIAL].setSelected(true);
+        atualizarCamposForma(FormaRasterizacao.Tipo.PONTO);
         setResolucaoDisplay(RESOLUCOES[RESOLUCAO_INICIAL][0], RESOLUCOES[RESOLUCAO_INICIAL][1]);
         setCamposPersonalizadosAtivos(false);
         limparResultados();
@@ -105,13 +121,28 @@ public class TransformacoesView extends JFrame {
         primeiraLinha.add(ymaxCampo);
 
         JPanel segundaLinha = linhaDeCampos();
-        segundaLinha.add(new JLabel("Ponto no mundo: x"));
+        segundaLinha.add(xRotulo);
         segundaLinha.add(xCampo);
-        segundaLinha.add(new JLabel("y"));
+        segundaLinha.add(yRotulo);
         segundaLinha.add(yCampo);
         segundaLinha.add(new JLabel("NDC"));
         segundaLinha.add(cenario);
         segundaLinha.add(mostrar);
+
+        JPanel terceiraLinha = linhaDeCampos();
+        terceiraLinha.add(new JLabel("Primitiva"));
+        terceiraLinha.add(tipoForma);
+        terceiraLinha.add(x2Rotulo);
+        terceiraLinha.add(x2Campo);
+        terceiraLinha.add(y2Rotulo);
+        terceiraLinha.add(y2Campo);
+        terceiraLinha.add(raioRotulo);
+        terceiraLinha.add(raioCampo);
+
+        JPanel camposDesenho = new JPanel(new GridLayout(0, 1));
+        camposDesenho.setOpaque(false);
+        camposDesenho.add(segundaLinha);
+        camposDesenho.add(terceiraLinha);
 
         JPanel controles = new JPanel(new BorderLayout());
         controles.setBackground(FUNDO_JANELA);
@@ -119,8 +150,21 @@ public class TransformacoesView extends JFrame {
                 BorderFactory.createMatteBorder(0, 0, 1, 0, BORDA),
                 BorderFactory.createEmptyBorder(4, 6, 4, 6)));
         controles.add(primeiraLinha, BorderLayout.NORTH);
-        controles.add(segundaLinha, BorderLayout.SOUTH);
+        controles.add(camposDesenho, BorderLayout.SOUTH);
         return controles;
+    }
+
+    private void atualizarCamposForma(FormaRasterizacao.Tipo tipo) {
+        boolean reta = tipo == FormaRasterizacao.Tipo.RETA;
+        boolean circunferencia = tipo == FormaRasterizacao.Tipo.CIRCUNFERENCIA;
+        xRotulo.setText(reta ? "Início x" : circunferencia ? "Centro x" : "Ponto x");
+        yRotulo.setText(reta ? "Início y" : circunferencia ? "Centro y" : "Ponto y");
+        x2Rotulo.setVisible(reta);
+        x2Campo.setVisible(reta);
+        y2Rotulo.setVisible(reta);
+        y2Campo.setVisible(reta);
+        raioRotulo.setVisible(circunferencia);
+        raioCampo.setVisible(circunferencia);
     }
 
     private static JPanel linhaDeCampos() {
@@ -159,6 +203,7 @@ public class TransformacoesView extends JFrame {
         c.fill = GridBagConstraints.HORIZONTAL;
         c.anchor = GridBagConstraints.NORTH;
         c.insets = new Insets(0, 0, 10, 0);
+        lateral.add(painel("Algoritmo de rasterização", criarConteudoAlgoritmos()), c);
         lateral.add(painel("Resolução do display", criarConteudoResolucao()), c);
         lateral.add(painel("Resultados", criarConteudoResultados()), c);
         c.weighty = 1;
@@ -231,6 +276,22 @@ public class TransformacoesView extends JFrame {
         controlesVisualizacao.add(grade);
         c.insets = new Insets(6, 0, 0, 0);
         conteudo.add(controlesVisualizacao, c);
+        return conteudo;
+    }
+
+    private JPanel criarConteudoAlgoritmos() {
+        JPanel conteudo = new JPanel(new GridBagLayout());
+        conteudo.setOpaque(false);
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.weightx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.WEST;
+        conteudo.add(new JLabel("Algoritmo selecionado"), c);
+        c.insets = new Insets(4, 0, 0, 0);
+        conteudo.add(algoritmos, c);
+        c.insets = new Insets(6, 0, 0, 0);
+        conteudo.add(rotuloSecundario("As implementações dos algoritmos serão adicionadas depois."), c);
         return conteudo;
     }
 
@@ -371,6 +432,25 @@ public class TransformacoesView extends JFrame {
         grade.addActionListener(listener);
     }
 
+    public void addAlgoritmoListener(ActionListener listener) {
+        algoritmos.addActionListener(listener);
+    }
+
+    public void addFormaListener(ActionListener listener) {
+        tipoForma.addActionListener(listener);
+    }
+
+    public void setAlgoritmosParaForma(FormaRasterizacao.Tipo tipo) {
+        DefaultComboBoxModel<TipoAlgoritmo> modelo = new DefaultComboBoxModel<>();
+        for (TipoAlgoritmo algoritmo : TipoAlgoritmo.values()) {
+            if (algoritmo.getTipoForma() == tipo) {
+                modelo.addElement(algoritmo);
+            }
+        }
+        algoritmos.setModel(modelo);
+        algoritmos.setEnabled(tipo != FormaRasterizacao.Tipo.PONTO);
+    }
+
     /* Disparado ao escolher uma resolucao, ao clicar em Aplicar ou ao teclar Enter nos campos. */
     public void addResolucaoListener(ActionListener listener) {
         for (JRadioButton opcao : opcoesResolucao) {
@@ -397,11 +477,25 @@ public class TransformacoesView extends JFrame {
 
     public String getYTexto() { return yCampo.getText(); }
 
+    public String getX2Texto() { return x2Campo.getText(); }
+
+    public String getY2Texto() { return y2Campo.getText(); }
+
+    public String getRaioTexto() { return raioCampo.getText(); }
+
+    public FormaRasterizacao.Tipo getTipoFormaSelecionado() {
+        return (FormaRasterizacao.Tipo) tipoForma.getSelectedItem();
+    }
+
     public boolean isCentrado() { return cenario.getSelectedIndex() == 1; }
 
     public int getAmpliacao() { return 1 << ampliacao.getSelectedIndex(); }
 
     public boolean isGradeAtiva() { return grade.isSelected(); }
+
+    public TipoAlgoritmo getAlgoritmoSelecionado() {
+        return (TipoAlgoritmo) algoritmos.getSelectedItem();
+    }
 
     public boolean isResolucaoPersonalizada() { return opcaoPersonalizada.isSelected(); }
 
@@ -480,7 +574,13 @@ public class TransformacoesView extends JFrame {
     /* Ativa o pixel e rola o display ate ele, se a resolucao for maior que a area visivel. */
     public void drawPixel(int x, int y) {
         tela.drawPixel(x, y);
-        SwingUtilities.invokeLater(() -> tela.scrollRectToVisible(new Rectangle(x - 16, y - 16, 33, 33)));
+        int escala = tela.getEscala();
+        SwingUtilities.invokeLater(() -> tela.scrollRectToVisible(
+                new Rectangle(x * escala - 16, y * escala - 16, 33, 33)));
+    }
+
+    public void drawPixels(Iterable<Pixel> pixels) {
+        tela.drawPixels(pixels);
     }
 
     public void mostrarErro(String mensagem) {

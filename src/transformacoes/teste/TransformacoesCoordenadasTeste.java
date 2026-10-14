@@ -2,8 +2,12 @@ package transformacoes.teste;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.List;
+import transformacoes.model.AlgoritmoRasterizacao;
+import transformacoes.model.FormaRasterizacao;
 import transformacoes.model.Pixel;
 import transformacoes.model.Ponto;
+import transformacoes.model.TipoAlgoritmo;
 import static transformacoes.model.TransformadorCoordenadas.*;
 import transformacoes.view.Tela;
 
@@ -81,8 +85,38 @@ public final class TransformacoesCoordenadasTeste {
         if ((visualizacao.getRGB(4, 1) & 0xFFFFFF) != Tela.COR_FUNDO) {
             throw new AssertionError("A grade deve poder ser desativada");
         }
+        if (TipoAlgoritmo.values().length != 5) {
+            throw new AssertionError("Catalogo dos cinco algoritmos");
+        }
+        AlgoritmoRasterizacao algoritmoTeste = new AlgoritmoRasterizacao() {
+            @Override public TipoAlgoritmo getTipo() { return TipoAlgoritmo.DDA_RETA; }
+            @Override public List<Pixel> calcularPixels(FormaRasterizacao forma) {
+                return List.of(forma.getInicio(), forma.getFim());
+            }
+        };
+        List<Pixel> pixelsReta = algoritmoTeste.rasterizar(
+                FormaRasterizacao.reta(new Pixel(1, 2), new Pixel(6, 4)));
+        telaAmpliada.limpar();
+        telaAmpliada.drawPixels(pixelsReta);
+        if ((telaAmpliada.getImagem().getRGB(1, 2) & 0xFFFFFF) != Tela.COR_PIXEL
+                || (telaAmpliada.getImagem().getRGB(6, 4) & 0xFFFFFF) != Tela.COR_PIXEL) {
+            throw new AssertionError("Saida do algoritmo deve usar a renderizacao comum");
+        }
+        telaAmpliada.drawPixel(3, 3);
+        FormaRasterizacao ponto = FormaRasterizacao.ponto(new Pixel(3, 3));
+        if (ponto.getTipo() != FormaRasterizacao.Tipo.PONTO
+                || (telaAmpliada.getImagem().getRGB(3, 3) & 0xFFFFFF) != Tela.COR_PIXEL) {
+            throw new AssertionError("A primitiva ponto deve continuar usando drawPixel");
+        }
+        try {
+            algoritmoTeste.rasterizar(FormaRasterizacao.circunferencia(new Pixel(3, 3), 2));
+            throw new AssertionError("Algoritmo de reta nao deve aceitar circunferencia");
+        } catch (IllegalArgumentException esperado) {
+            // A interface comum rejeita formas incompatíveis antes da renderização.
+        }
         System.out.println("OK: ambos os cenarios, transformacoes inversas e limites.");
         System.out.println("OK: exatamente 1 pixel verde #00FF00 no frame buffer.");
         System.out.println("OK: ampliacao, grade e cliques preservam as coordenadas DC originais.");
+        System.out.println("OK: cinco algoritmos catalogados e saida rasterizada pela tela comum.");
     }
 }

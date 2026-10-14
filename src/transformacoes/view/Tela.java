@@ -2,6 +2,8 @@ package transformacoes.view;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.List;
+import java.util.Objects;
 import javax.swing.*;
 import transformacoes.model.Pixel;
 
@@ -81,12 +83,20 @@ public class Tela extends JPanel {
         repaint();
     }
 
-    /* Ativa EXATAMENTE UMA posicao do frame buffer: verde RGB #00FF00. */
+    /* Ativa uma posicao do frame buffer, mantendo drawPixel como atalho para pontos. */
     public void drawPixel(int x, int y) {
-        if (x >= 0 && y >= 0 && x < largura && y < altura) {
-            imagem.setRGB(x, y, COR_PIXEL);
-            repaint();
+        drawPixels(List.of(new Pixel(x, y)));
+    }
+
+    public void drawPixels(Iterable<Pixel> pixels) {
+        Objects.requireNonNull(pixels, "A colecao de pixels e obrigatoria.");
+        for (Pixel pixel : pixels) {
+            Objects.requireNonNull(pixel, "A colecao nao pode conter pixels nulos.");
+            if (pixel.x >= 0 && pixel.y >= 0 && pixel.x < largura && pixel.y < altura) {
+                imagem.setRGB(pixel.x, pixel.y, COR_PIXEL);
+            }
         }
+        repaint();
     }
 
     @Override
