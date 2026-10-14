@@ -9,7 +9,7 @@ import transformacoes.model.Ponto;
 import transformacoes.model.TransformadorCoordenadas;
 import transformacoes.view.TransformacoesView;
 
-/** Liga a View ao Model: trata eventos, valida entradas e coordena as transformacoes. */
+/** Liga a View ao Model: trata eventos, valida entradas e coordena as transformacoes */
 public class TransformacoesController {
     private static final int RESOLUCAO_MINIMA = 2;
     private static final int RESOLUCAO_MAXIMA = 4096;
@@ -47,7 +47,6 @@ public class TransformacoesController {
             int valor = Integer.parseInt(texto.trim());
             if (valor >= RESOLUCAO_MINIMA && valor <= RESOLUCAO_MAXIMA) return valor;
         } catch (NumberFormatException ignorada) {
-            // tratada abaixo com a mesma mensagem
         }
         throw new IllegalArgumentException(String.format(
                 "A %s do display deve ser um número inteiro entre %d e %d.",
@@ -73,7 +72,7 @@ public class TransformacoesController {
         return new double[] {xmin, xmax, ymin, ymax};
     }
 
-    /* Resolucao pre-definida ou personalizada -> novo frame buffer -> recalcula o pixel. */
+    /* Resolucao pre-definida ou personalizada -> novo frame -> recalcula o pixel */
     private void aplicarResolucao() {
         boolean personalizada = view.isResolucaoPersonalizada();
         view.setCamposPersonalizadosAtivos(personalizada);

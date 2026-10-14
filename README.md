@@ -1,16 +1,21 @@
-# Laboratório I — Computação Gráfica
+# Laboratórios — Computação Gráfica
 
-Implementação em Java das transformações entre coordenadas do mundo, coordenadas normalizadas do dispositivo (NDC) e coordenadas do display, com ativação de **um único pixel verde (`#00FF00`)**. Inclui o exercício complementar da aula G2 sobre **paleta RGB de 24 bits endereçada por índices de 12 bits**.
+Implementações em Java das atividades da disciplina:
 
-Disciplina: Computação Gráfica — UEPB. Professor: Robson Pequeno de Sousa.
+1. **Transformações de coordenadas** (aula G2): coordenadas do mundo → coordenadas normalizadas do dispositivo (NDC) → coordenadas do display, com ativação de **um único pixel verde (`#00FF00`)**.
+2. **Tabela de cores** (exercício complementar da aula G2): **paleta RGB de 24 bits endereçada por índices de 12 bits**.
+3. **Rasterização**: retas da aula G3 (**DDA** e **Bresenham**) e circunferências (**polinomial**, **trigonométrico** e **ponto médio**).
+
 
 ## Pré-requisitos
 
-- JDK instalado (por exemplo, Java 21).
-- Windows, Linux ou macOS com ambiente gráfico.
+- JDK 25 ou superior (veja a observação abaixo).
+- Windows, Linux ou macOS com ambiente gráfico, para as aplicações com interface. Os testes automáticos rodam sem interface.
 - Apenas bibliotecas nativas do Java: Swing e AWT.
 
 No terminal, verifique: `java -version` e `javac -version`.
+
+> **Versão do Java:** os pontos de entrada `TransformacoesCoordenadas` e `TabelaCores` declaram `static void main` sem `public`, o que o Java só aceita sem flags a partir do JDK 25. No JDK 21, execute essas duas classes com `java --enable-preview -cp out ...`. Os testes de rasterização têm `public static void main` e rodam em qualquer JDK a partir do 17.
 
 ## Estrutura do projeto
 
@@ -31,23 +36,41 @@ src/
 │   │   └── TransformacoesController.java# eventos, validação e orquestração
 │   └── teste/
 │       └── TransformacoesCoordenadasTeste.java   # --test
-└── tabelacores/                         # 2. Exercício complementar
-    ├── TabelaCores.java                 # ponto de entrada (main)
+├── tabelacores/                         # 2. Exercício complementar
+│   ├── TabelaCores.java                 # ponto de entrada (main)
+│   ├── model/
+│   │   └── Paleta.java                  # 4096 entradas RGB de 24 bits
+│   ├── view/
+│   │   └── TabelaCoresView.java         # janela, grade de amostras e detalhes
+│   ├── controller/
+│   │   └── TabelaCoresController.java   # eventos, paginação e edição da paleta
+│   ├── util/
+│   │   └── Hexadecimal.java             # leitura/validação de valores hexadecimais
+│   └── teste/
+│       └── TabelaCoresTeste.java        # --test
+└── rasterizacao/                        # 3. Rasterização (ainda sem View)
     ├── model/
-    │   └── Paleta.java                  # 4096 entradas RGB de 24 bits
-    ├── view/
-    │   └── TabelaCoresView.java         # janela, grade de amostras e detalhes
+    │   ├── PlotadorPixel.java           # destino de cada pixel calculado
+    │   ├── DDA.java                     # reta: método do declive
+    │   ├── Bresenham.java               # reta: ponto médio, 8 octantes por simetria
+    │   ├── CircunferenciaPolinomial.java
+    │   ├── CircunferenciaTrigonometrica.java
+    │   ├── CircunferenciaPontoMedio.java
+    │   ├── SimetriaCircunferencia.java  # simetria de 8 pontos
+    │   └── AlgoritmoCircunferencia.java # enum com os três algoritmos
     ├── controller/
-    │   └── TabelaCoresController.java   # eventos, paginação e edição da paleta
-    ├── util/
-    │   └── Hexadecimal.java             # leitura/validação de valores hexadecimais
+    │   └── CircunferenciaController.java# validação e escolha do algoritmo
+    ├── integracao/
+    │   └── RenderizadorRetas.java       # liga DDA/Bresenham à Tela
     └── teste/
-        └── TabelaCoresTeste.java        # --test
+        ├── AlgoritmosRetaTeste.java
+        └── AlgoritmosCircunferenciaTeste.java
 ```
 
-- **Model**: dados e regras (transformações, paleta), sem dependência de Swing.
+- **Model**: dados e regras (transformações, paleta, algoritmos de rasterização), sem dependência de Swing.
 - **View**: componentes Swing; expõe getters/setters e registro de listeners.
 - **Controller**: recebe os eventos da View, valida a entrada e atualiza Model e View.
+
 
 ## Compilação
 
@@ -58,6 +81,8 @@ javac -d out (Get-ChildItem -Recurse src -Filter *.java).FullName
 ```
 
 No Linux/macOS: `javac -d out $(find src -name "*.java")`.
+
+A pasta `out/` não é versionada. Recompile depois de atualizar o código, senão as classes novas (como as de `rasterizacao`) não existirão em `out/`.
 
 ## 1. Transformações de coordenadas
 
@@ -71,13 +96,14 @@ java -cp out transformacoes.TransformacoesCoordenadas
 
 Na interface:
 
-1. Defina a janela do mundo (`xmin`, `xmax`, `ymin`, `ymax`), com `xmin < xmax` e `ymin < ymax`.
-2. Informe o ponto `(x, y)` da janela.
-3. Selecione um dos dois cenários NDC: `[0,1] × [0,1]` ou `[-1,1] × [-1,1]`.
-4. Clique em **Ativar pixel**. A área preta mostra um pixel verde na posição calculada; os resultados numéricos são exibidos abaixo dela.
-5. Opcionalmente, clique na área preta para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
+1. No painel **Resolução do display**, escolha uma resolução pré-definida (de 320 × 240 a 1920 × 1080; a inicial é 640 × 480) ou **Personalizada**, com largura e altura entre 2 e 4096 px, confirmadas em **Aplicar**.
+2. Defina a janela do mundo (`xmin`, `xmax`, `ymin`, `ymax`), com `xmin < xmax` e `ymin < ymax`.
+3. Informe o ponto `(x, y)` da janela. Se ele estiver fora da janela, nenhum pixel é ativado.
+4. Selecione um dos dois cenários NDC: `[0,1] × [0,1]` ou `[-1,1] × [-1,1]`.
+5. Clique em **Ativar pixel**. O display (fundo branco) mostra um pixel verde na posição calculada, e o painel **Resultados** exibe as coordenadas no mundo, em NDC e no dispositivo.
+6. Opcionalmente, clique no display para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo). O ponto calculado preenche os campos `x` e `y`, e o pixel é reativado.
 
-O desenho usa `BufferedImage.setRGB()`, sem ampliar o ponto ou adicionar grade/eixos. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
+O desenho usa `BufferedImage.setRGB()`, sem ampliar o ponto ou adicionar grade/eixos. A área de desenho tem exatamente a resolução escolhida: 1 pixel do frame buffer corresponde a 1 pixel na tela.
 
 ### Procedimentos solicitados na aula G2
 
@@ -156,3 +182,112 @@ Teste automático:
 ```powershell
 java -cp out tabelacores.TabelaCores --test
 ```
+
+## 3. Rasterização de retas e circunferências
+
+Pacote: `rasterizacao`. Ainda não há interface gráfica nem ponto de entrada próprio; os algoritmos são verificados pelos testes automáticos.
+
+Todos os algoritmos trabalham em coordenadas inteiras do dispositivo, sem a conversão mundo/NDC. Cada pixel calculado é entregue a um `PlotadorPixel`, interface com o método `desenhar(int x, int y)`. Assim, o mesmo algoritmo serve tanto para desenhar na `Tela` quanto para guardar os pixels numa lista durante os testes.
+
+### Retas (aula G3)
+
+| Algoritmo | Classe | Ideia |
+| --- | --- | --- |
+| DDA (método do declive) | `DDA` | `passos = max(abs(dx), abs(dy))`; a cada passo soma `dx/passos` em x e `dy/passos` em y e arredonda. Usa ponto flutuante. |
+| Bresenham (ponto médio) | `Bresenham` | Só inteiros: `d = 2dy - dx`. Se `d <= 0`, escolhe E e soma `incE = 2dy`; senão, escolhe NE e soma `incNE = 2(dy - dx)`. |
+
+O Bresenham resolve o caso do 1º octante e cobre os outros sete por **simetria**: inverte o sentido de x e/ou de y (reflexão nos eixos) e troca x com y quando a reta é mais inclinada que 45° (reflexão em `y = x`). Os dois algoritmos incluem ambos os extremos.
+
+A classe `integracao/RenderizadorRetas` liga os dois algoritmos à `Tela` do módulo de transformações (`tela::drawPixel`) e ficará disponível para a futura interface.
+
+Exemplos dos slides, conferidos no teste:
+
+| Algoritmo | Reta | Pixels |
+| --- | --- | --- |
+| DDA | (6,9) → (11,12) | (6,9), (7,10), (8,10), (9,11), (10,11), (11,12) |
+| Bresenham | (20,10) → (30,18) | (20,10), (21,11), (22,12), (23,12), (24,13), (25,14), (26,15), (27,16), (28,16), (29,17), (30,18) |
+
+Teste automático:
+
+```powershell
+java -cp out rasterizacao.teste.AlgoritmosRetaTeste
+```
+
+Além dos exemplos, o teste cobre retas horizontais, verticais, invertidas e de um único pixel. Também percorre 1681 direções (`dx` e `dy` de -20 a 20) verificando extremos, quantidade de pixels, ausência de repetições e de interrupções, e confere a simetria do Bresenham nos 8 octantes.
+
+### Circunferências
+
+Os três algoritmos calculam apenas o **2º oitante**, o arco de 90° (ponto `(0, r)`) até 45° (diagonal `x = y`), onde `0 <= x <= y`, e param ao cruzar a diagonal. A classe `SimetriaCircunferencia` gera os outros sete oitantes:
+
+```text
+( x,  y)  ( y,  x)  (-x,  y)  (-y,  x)
+( x, -y)  ( y, -x)  (-x, -y)  (-y, -x)
+```
+
+Quando `x = 0` ou `x = y`, alguns desses pontos coincidem; cada pixel é ativado uma única vez.
+
+| Algoritmo | Classe | Cálculo no oitante |
+| --- | --- | --- |
+| Polinomial | `CircunferenciaPolinomial` | Para x = 0, 1, 2…: `y = round(sqrt(r² - x²))`. |
+| Trigonométrico | `CircunferenciaTrigonometrica` | `x = round(r·cos θ)`, `y = round(r·sen θ)`, com θ indo de 90° em direção a 45° em passos de `1/r` radiano. Amostras que caem no mesmo pixel são descartadas. |
+| Ponto médio | `CircunferenciaPontoMedio` | Só inteiros: `d = 1 - r`. Se `d < 0`, escolhe E e soma `2x + 3`; senão, escolhe SE (y diminui) e soma `2(x - y) + 5`. |
+
+- O passo de `1/r` radiano deixa amostras consecutivas a menos de 1 pixel de distância, então a curva trigonométrica não tem buracos.
+- O ponto médio chega aos mesmos pixels que o polinomial, mas sem raiz quadrada nem arredondamento. O teste confere isso para todo raio até 1000.
+- **Raio 0** desenha só o centro. O **centro** pode estar em qualquer posição, inclusive com coordenadas negativas; a `Tela` ignora pixels fora da área de desenho. Raio negativo, plotador nulo ou circunferência que ultrapasse o intervalo de `int` são recusados antes de qualquer pixel ser ativado.
+
+Exemplo do ponto médio para `r = 10` (os três algoritmos geram o mesmo oitante):
+
+| Pixel atual | d | Escolha | Próximo pixel |
+| --- | --- | --- | --- |
+| (0,10) | -9 | E | (1,10) |
+| (1,10) | -6 | E | (2,10) |
+| (2,10) | -1 | E | (3,10) |
+| (3,10) | 6 | SE | (4,9) |
+| (4,9) | -3 | E | (5,9) |
+| (5,9) | 8 | SE | (6,8) |
+| (6,8) | 5 | SE | (7,7) |
+
+Em `(7,7)` o oitante chega à diagonal e termina; a simetria completa a circunferência.
+
+#### Controller
+
+`CircunferenciaController` valida a entrada, escolhe o algoritmo e envia os pixels ao destino informado no construtor. Ele aceita os valores como texto, do jeito que virão dos campos da futura View, ou já convertidos:
+
+- **Algoritmo**: `polinomial`, `trigonometrico` ou `ponto medio`, sem diferenciar maiúsculas, acentos, espaços, `_` ou `-`.
+- **Centro**: quaisquer inteiros.
+- **Raio**: inteiro de 0 a 10 000 (`RAIO_MAXIMO`).
+
+O método `desenhar` retorna a quantidade de pixels ativados. Na futura tela, basta criar `new CircunferenciaController(tela::drawPixel)`.
+
+#### Testes
+
+Todos os testes de circunferência:
+
+```powershell
+java -cp out rasterizacao.teste.AlgoritmosCircunferenciaTeste
+```
+
+Testes individuais (pode passar mais de um, separados por espaço):
+
+```powershell
+java -cp out rasterizacao.teste.AlgoritmosCircunferenciaTeste polinomial
+java -cp out rasterizacao.teste.AlgoritmosCircunferenciaTeste trigonometrico
+java -cp out rasterizacao.teste.AlgoritmosCircunferenciaTeste pontomedio
+java -cp out rasterizacao.teste.AlgoritmosCircunferenciaTeste simetria
+java -cp out rasterizacao.teste.AlgoritmosCircunferenciaTeste controller
+```
+
+Cada algoritmo é testado separadamente:
+
+- Sequência exata do exemplo `r = 10`, raio 1 e raio nulo.
+- Para todo raio de 0 a 200:
+  - nenhum pixel repetido;
+  - os quatro extremos presentes;
+  - simetria completa;
+  - curva fechada e contínua (8-vizinhança);
+  - erro máximo em relação à circunferência real: 0,5 px no polinomial e no ponto médio, e √2/2 ≈ 0,71 px no trigonométrico, que arredonda x e y.
+- Mudar o centro apenas desloca o desenho.
+- Entradas inválidas são recusadas.
+
+Se tudo estiver correto, cada teste imprime uma linha `OK: ...`, seguida de `Testes de circunferencia concluidos com sucesso.`

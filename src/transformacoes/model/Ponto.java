@@ -1,6 +1,6 @@
 package transformacoes.model;
 
-/** Ponto com coordenadas reais (mundo ou NDC). */
+/** Ponto com coordenadas reais (mundo ou NDC) */
 public class Ponto {
     public final double x;
     public final double y;

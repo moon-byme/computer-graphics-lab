@@ -1,10 +1,10 @@
 package transformacoes.model;
 
-/** Transformacoes Mundo -> NDC -> Dispositivo (e inversas). */
+/** Transformacoes Mundo -> NDC -> Dispositivo (e inversas) */
 public final class TransformadorCoordenadas {
     private TransformadorCoordenadas() { }
 
-    /* Janela de mundo -> coordenadas normalizadas. */
+    /* Janela de mundo -> coordenadas normalizadas */
     public static Ponto userToNdc(double x, double y, double xmin, double xmax,
                                   double ymin, double ymax, boolean centrado) {
         double nx = (x - xmin) / (xmax - xmin);
@@ -16,7 +16,7 @@ public final class TransformadorCoordenadas {
         return new Ponto(nx, ny);
     }
 
-    /* Coordenadas normalizadas -> janela de mundo (transformacao inversa). */
+    /* Coordenadas normalizadas -> janela de mundo (transformacao inversa) */
     public static Ponto ndcToUser(double nx, double ny, double xmin, double xmax,
                                   double ymin, double ymax, boolean centrado) {
         if (centrado) {
@@ -39,7 +39,7 @@ public final class TransformadorCoordenadas {
         return new Pixel(dx, dy);
     }
 
-    /* Dispositivo de entrada (mouse) -> NDC. */
+    /* Dispositivo de entrada (mouse) -> NDC */
     public static Ponto inpToNdc(int dx, int dy, int largura, int altura,
                                  boolean centrado) {
         double nx = (double) dx / (largura - 1);

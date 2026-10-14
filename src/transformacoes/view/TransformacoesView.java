@@ -8,9 +8,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
-/** Janela do Laboratorio I: apenas componentes visuais, sem regras de negocio. */
+/** apenas componentes visuais, sem regras de negocio */
 public class TransformacoesView extends JFrame {
-    /* Paleta clara: cinza na janela, branco no display e nos paineis de informacao. */
     private static final Color FUNDO_JANELA = new Color(0xEEF0F3);
     private static final Color FUNDO_MESA = new Color(0xD9DDE3);
     private static final Color FUNDO_PAINEL = Color.WHITE;
@@ -30,14 +29,13 @@ public class TransformacoesView extends JFrame {
     private static final String[] NOMES_RESOLUCOES = {
         "QVGA", "VGA", "SVGA", "XGA", "HD", "WXGA", "Full HD"
     };
-    private static final int RESOLUCAO_INICIAL = 1; // 640 x 480
+    private static final int RESOLUCAO_INICIAL = 1; 
 
     static {
-        // Fontes sem negrito no tema padrao (Metal); precisa rodar antes de criar componentes.
         UIManager.put("swing.boldMetal", Boolean.FALSE);
     }
 
-    /* Janela do mundo, ponto e cenario NDC: os mesmos campos de antes. */
+    /* Janela do mundo, ponto e cenario NDC */
     private final JTextField xminCampo = new JTextField("-10", 5);
     private final JTextField xmaxCampo = new JTextField("30", 5);
     private final JTextField yminCampo = new JTextField("5", 5);
@@ -126,7 +124,7 @@ public class TransformacoesView extends JFrame {
         return linha;
     }
 
-    /* O display fica centralizado sobre um fundo cinza; resolucoes grandes ganham rolagem. */
+    /* dispay centralizado */
     private JScrollPane criarAreaDisplay() {
         JPanel moldura = new JPanel(new BorderLayout());
         moldura.setBorder(BorderFactory.createLineBorder(BORDA_DISPLAY));
@@ -167,7 +165,6 @@ public class TransformacoesView extends JFrame {
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         rolagem.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, BORDA));
         rolagem.getVerticalScrollBar().setUnitIncrement(16);
-        // Largura do conteudo + espaco da barra de rolagem: nada fica cortado em telas baixas.
         int largura = lateral.getPreferredSize().width
                 + rolagem.getVerticalScrollBar().getPreferredSize().width + 1;
         rolagem.setPreferredSize(new Dimension(largura, 0));
@@ -182,7 +179,6 @@ public class TransformacoesView extends JFrame {
         c.weightx = 1;
         c.anchor = GridBagConstraints.WEST;
 
-        // Resolucoes prontas em duas colunas; "Personalizada" fica por ultimo, com seus campos logo abaixo.
         JPanel prontas = new JPanel(new GridLayout(0, 2, 8, 0));
         prontas.setOpaque(false);
         ButtonGroup grupo = new ButtonGroup();
@@ -263,7 +259,6 @@ public class TransformacoesView extends JFrame {
         return status;
     }
 
-    /* ----- Pecas reutilizadas ----- */
     private static JPanel painel(String titulo, JComponent conteudo) {
         JLabel cabecalho = new JLabel(titulo);
         cabecalho.setFont(cabecalho.getFont().deriveFont(Font.BOLD, 13f));
@@ -311,7 +306,6 @@ public class TransformacoesView extends JFrame {
         return caixa;
     }
 
-    /* Primeira coluna: nome do sistema em negrito; demais: numeros alinhados a direita. */
     private static final class Celula extends DefaultTableCellRenderer {
         private final boolean rotulo;
 
@@ -349,12 +343,10 @@ public class TransformacoesView extends JFrame {
         }
     }
 
-    /* ----- Registro de listeners (o Controller decide o que fazer) ----- */
     public void addMostrarListener(ActionListener listener) { mostrar.addActionListener(listener); }
 
     public void addCenarioListener(ActionListener listener) { cenario.addActionListener(listener); }
 
-    /* Disparado ao escolher uma resolucao, ao clicar em Aplicar ou ao teclar Enter nos campos. */
     public void addResolucaoListener(ActionListener listener) {
         for (JRadioButton opcao : opcoesResolucao) {
             opcao.addActionListener(listener);
@@ -395,7 +387,6 @@ public class TransformacoesView extends JFrame {
 
     public String getAlturaPersonalizadaTexto() { return alturaCampo.getText(); }
 
-    /* Resolucao do frame buffer (nao o tamanho da janela). */
     public int getLarguraTela() { return tela.getLarguraDisplay(); }
 
     public int getAlturaTela() { return tela.getAlturaDisplay(); }
@@ -420,7 +411,6 @@ public class TransformacoesView extends JFrame {
         mesa.repaint();
     }
 
-    /* Cada linha: {sistema, x, y}. */
     public void setResultados(String[][] linhas) { preencher(resultados, linhas); }
 
     public void setResultadosInversa(String[][] linhas) { preencher(inversa, linhas); }
@@ -444,7 +434,6 @@ public class TransformacoesView extends JFrame {
 
     public void limparTela() { tela.limpar(); }
 
-    /* Ativa o pixel e rola o display ate ele, se a resolucao for maior que a area visivel. */
     public void drawPixel(int x, int y) {
         tela.drawPixel(x, y);
         SwingUtilities.invokeLater(() -> tela.scrollRectToVisible(new Rectangle(x - 16, y - 16, 33, 33)));

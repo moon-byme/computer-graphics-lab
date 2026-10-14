@@ -5,9 +5,8 @@ import java.awt.image.BufferedImage;
 import javax.swing.*;
 
 /*
- * Frame buffer raster com a resolucao escolhida para o display.
- * O buffer guarda apenas o fundo branco e, no maximo, UM pixel verde #00FF00,
- * sem grade, ampliacao, circulo, mira ou espessura artificial.
+ * Frame com a resolucao escolhida para o display.
+ * O frame guarda apenas o fundo branco e, no maximo, UM pixel verde #00FF00, que representa a posicao do clique do mouse.
  */
 public class Tela extends JPanel {
     public static final int COR_FUNDO = 0xFFFFFF;
@@ -29,7 +28,7 @@ public class Tela extends JPanel {
 
     public int getAlturaDisplay() { return altura; }
 
-    /* O componente passa a ter exatamente largura x altura: 1 pixel do buffer = 1 pixel na tela. */
+    /* O componente passa a ter exatamente largura x altura: 1 pixel do frame = 1 pixel na tela. */
     public void setResolucao(int largura, int altura) {
         if (largura < 2 || altura < 2) {
             throw new IllegalArgumentException("A resolucao minima do display e 2 x 2.");
@@ -44,7 +43,7 @@ public class Tela extends JPanel {
         revalidate();
     }
 
-    /* Recria o frame buffer com todos os pixels na cor de fundo (branco). */
+    /* Recria o frame com todos os pixels na cor de fundo (branco) */
     public void limpar() {
         imagem = new BufferedImage(largura, altura, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = imagem.createGraphics();
@@ -54,7 +53,7 @@ public class Tela extends JPanel {
         repaint();
     }
 
-    /* Ativa EXATAMENTE UMA posicao do frame buffer: verde RGB #00FF00. */
+    /* Ativa EXATAMENTE UMA posicao do frame: verde RGB #00FF00. */
     public void drawPixel(int x, int y) {
         if (x >= 0 && y >= 0 && x < largura && y < altura) {
             imagem.setRGB(x, y, COR_PIXEL);
@@ -65,7 +64,7 @@ public class Tela extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // Escala original: 1 ponto da imagem por pixel do componente, nada desenhado por cima.
+        // Escala original: 1 ponto da imagem por pixel do componente, nada desenhado por cima
         g.drawImage(imagem, 0, 0, null);
     }
 }
