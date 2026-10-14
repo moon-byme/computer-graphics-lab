@@ -77,7 +77,7 @@ Na interface:
 4. Clique em **Ativar pixel**. A área preta mostra um pixel verde na posição calculada; os resultados numéricos são exibidos abaixo dela.
 5. Opcionalmente, clique na área preta para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
 
-O desenho usa `BufferedImage.setRGB()`, sem ampliar o ponto ou adicionar grade/eixos. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
+O framebuffer mantém a resolução original e armazena exatamente um pixel verde. Use **Ampliação** (1×, 2×, 4× ou 8×) para inspecionar os pixels; a opção **Grade** desenha limites entre pixels quando a ampliação é maior que 1×. A ampliação e a grade afetam apenas a visualização, não alteram os pixels armazenados nem as coordenadas DC. Cliques na imagem ampliada são convertidos de volta às coordenadas do display original antes da transformação inversa. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
 
 ### Procedimentos solicitados na aula G2
 

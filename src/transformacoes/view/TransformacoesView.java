@@ -7,6 +7,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
+import transformacoes.model.Pixel;
 
 /** Janela do Laboratorio I: apenas componentes visuais, sem regras de negocio. */
 public class TransformacoesView extends JFrame {
@@ -59,6 +60,8 @@ public class TransformacoesView extends JFrame {
     private final JTextField larguraCampo = new JTextField("1000", 5);
     private final JTextField alturaCampo = new JTextField("700", 5);
     private final JButton aplicarResolucao = new JButton("Aplicar");
+    private final JComboBox<String> ampliacao = new JComboBox<>(new String[] {"1×", "2×", "4×", "8×"});
+    private final JCheckBox grade = new JCheckBox("Grade");
 
     /* Resultados. */
     private final DefaultTableModel resultados = criarModelo();
@@ -219,6 +222,15 @@ public class TransformacoesView extends JFrame {
         campos.add(aplicarResolucao, f);
         c.insets = new Insets(0, 26, 2, 0);
         conteudo.add(campos, c);
+
+        JPanel controlesVisualizacao = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+        controlesVisualizacao.setOpaque(false);
+        controlesVisualizacao.add(new JLabel("Ampliação"));
+        controlesVisualizacao.add(ampliacao);
+        grade.setOpaque(false);
+        controlesVisualizacao.add(grade);
+        c.insets = new Insets(6, 0, 0, 0);
+        conteudo.add(controlesVisualizacao, c);
         return conteudo;
     }
 
@@ -354,6 +366,11 @@ public class TransformacoesView extends JFrame {
 
     public void addCenarioListener(ActionListener listener) { cenario.addActionListener(listener); }
 
+    public void addVisualizacaoListener(ActionListener listener) {
+        ampliacao.addActionListener(listener);
+        grade.addActionListener(listener);
+    }
+
     /* Disparado ao escolher uma resolucao, ao clicar em Aplicar ou ao teclar Enter nos campos. */
     public void addResolucaoListener(ActionListener listener) {
         for (JRadioButton opcao : opcoesResolucao) {
@@ -382,6 +399,10 @@ public class TransformacoesView extends JFrame {
 
     public boolean isCentrado() { return cenario.getSelectedIndex() == 1; }
 
+    public int getAmpliacao() { return 1 << ampliacao.getSelectedIndex(); }
+
+    public boolean isGradeAtiva() { return grade.isSelected(); }
+
     public boolean isResolucaoPersonalizada() { return opcaoPersonalizada.isSelected(); }
 
     public int[] getResolucaoPredefinida() {
@@ -400,6 +421,12 @@ public class TransformacoesView extends JFrame {
 
     public int getAlturaTela() { return tela.getAlturaDisplay(); }
 
+    public int getLarguraVisualizacao() { return tela.getLarguraVisualizacao(); }
+
+    public int getAlturaVisualizacao() { return tela.getAlturaVisualizacao(); }
+
+    public Pixel toDisplayPixel(int x, int y) { return tela.toDisplayPixel(x, y); }
+
     /* ----- Atualizacao da interface ----- */
     public void setXTexto(String texto) { xCampo.setText(texto); }
 
@@ -416,6 +443,12 @@ public class TransformacoesView extends JFrame {
     public void setResolucaoDisplay(int largura, int altura) {
         tela.setResolucao(largura, altura);
         displayRotulo.setText(String.format("Display: %d × %d px", largura, altura));
+        mesa.revalidate();
+        mesa.repaint();
+    }
+
+    public void setVisualizacaoDisplay(int escala, boolean gradeAtiva) {
+        tela.setVisualizacao(escala, gradeAtiva);
         mesa.revalidate();
         mesa.repaint();
     }

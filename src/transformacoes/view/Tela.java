@@ -3,18 +3,17 @@ package transformacoes.view;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
+import transformacoes.model.Pixel;
 
-/*
- * Frame buffer raster com a resolucao escolhida para o display.
- * O buffer guarda apenas o fundo branco e, no maximo, UM pixel verde #00FF00,
- * sem grade, ampliacao, circulo, mira ou espessura artificial.
- */
+/* Frame buffer na resolucao original; ampliacao e grade existem apenas na pintura. */
 public class Tela extends JPanel {
     public static final int COR_FUNDO = 0xFFFFFF;
     public static final int COR_PIXEL = 0x00FF00;
 
     private int largura;
     private int altura;
+    private int escala = 1;
+    private boolean gradeAtiva;
     private BufferedImage imagem;
 
     public Tela() {
@@ -29,19 +28,47 @@ public class Tela extends JPanel {
 
     public int getAlturaDisplay() { return altura; }
 
-    /* O componente passa a ter exatamente largura x altura: 1 pixel do buffer = 1 pixel na tela. */
+    public int getEscala() { return escala; }
+
+    public int getLarguraVisualizacao() { return largura * escala; }
+
+    public int getAlturaVisualizacao() { return altura * escala; }
+
+    /* A resolucao do buffer permanece independente da escala de visualizacao. */
     public void setResolucao(int largura, int altura) {
         if (largura < 2 || altura < 2) {
             throw new IllegalArgumentException("A resolucao minima do display e 2 x 2.");
         }
         this.largura = largura;
         this.altura = altura;
-        Dimension tamanho = new Dimension(largura, altura);
+        atualizarTamanhoVisualizacao();
+        limpar();
+        revalidate();
+    }
+
+    public void setVisualizacao(int escala, boolean gradeAtiva) {
+        if (escala != 1 && escala != 2 && escala != 4 && escala != 8) {
+            throw new IllegalArgumentException("A ampliacao deve ser 1x, 2x, 4x ou 8x.");
+        }
+        this.escala = escala;
+        this.gradeAtiva = gradeAtiva;
+        atualizarTamanhoVisualizacao();
+        revalidate();
+        repaint();
+    }
+
+    private void atualizarTamanhoVisualizacao() {
+        Dimension tamanho = new Dimension(getLarguraVisualizacao(), getAlturaVisualizacao());
         setPreferredSize(tamanho);
         setMinimumSize(tamanho);
         setMaximumSize(tamanho);
-        limpar();
-        revalidate();
+    }
+
+    public Pixel toDisplayPixel(int x, int y) {
+        if (x < 0 || y < 0 || x >= getLarguraVisualizacao() || y >= getAlturaVisualizacao()) {
+            throw new IllegalArgumentException("O ponto está fora da área visualizada.");
+        }
+        return new Pixel(x / escala, y / escala);
     }
 
     /* Recria o frame buffer com todos os pixels na cor de fundo (branco). */
@@ -65,7 +92,19 @@ public class Tela extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // Escala original: 1 ponto da imagem por pixel do componente, nada desenhado por cima.
-        g.drawImage(imagem, 0, 0, null);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                            RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        g2.drawImage(imagem, 0, 0, getLarguraVisualizacao(), getAlturaVisualizacao(), null);
+        if (gradeAtiva && escala > 1) {
+            g2.setColor(new Color(0, 0, 0, 80));
+            for (int x = escala; x < getLarguraVisualizacao(); x += escala) {
+                g2.drawLine(x, 0, x, getAlturaVisualizacao());
+            }
+            for (int y = escala; y < getAlturaVisualizacao(); y += escala) {
+                g2.drawLine(0, y, getLarguraVisualizacao(), y);
+            }
+        }
+        g2.dispose();
     }
 }

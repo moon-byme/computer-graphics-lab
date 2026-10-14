@@ -21,6 +21,7 @@ public class TransformacoesController {
         this.view = view;
 
         view.addMostrarListener(e -> atualizar(true));
+        view.addVisualizacaoListener(e -> aplicarVisualizacao());
         view.addCenarioListener(e -> {
             view.limparInversa();
             atualizar(false);
@@ -30,6 +31,10 @@ public class TransformacoesController {
             @Override public void mousePressed(MouseEvent e) { transformarClique(e.getX(), e.getY()); }
         });
         SwingUtilities.invokeLater(() -> atualizar(false));
+    }
+
+    private void aplicarVisualizacao() {
+        view.setVisualizacaoDisplay(view.getAmpliacao(), view.isGradeAtiva());
     }
 
     private static double lerNumero(String texto) {
@@ -99,17 +104,20 @@ public class TransformacoesController {
 
     /* Transformacao inversa: dispositivo de entrada (mouse) -> NDC -> mundo. */
     private void transformarClique(int dx, int dy) {
+        if (dx < 0 || dy < 0 || dx >= view.getLarguraVisualizacao()
+                || dy >= view.getAlturaVisualizacao()) return;
+        Pixel dispositivo = view.toDisplayPixel(dx, dy);
         int largura = view.getLarguraTela();
         int altura = view.getAlturaTela();
-        if (dx < 0 || dy < 0 || dx >= largura || dy >= altura) return;
         try {
             double[] mundo = lerJanela();
             boolean centrado = view.isCentrado();
-            Ponto ndc = TransformadorCoordenadas.inpToNdc(dx, dy, largura, altura, centrado);
+            Ponto ndc = TransformadorCoordenadas.inpToNdc(dispositivo.x, dispositivo.y,
+                                                          largura, altura, centrado);
             Ponto ponto = TransformadorCoordenadas.ndcToUser(ndc.x, ndc.y, mundo[0], mundo[1],
                                                              mundo[2], mundo[3], centrado);
             view.setResultadosInversa(new String[][] {
-                {"Clique (mouse)", String.valueOf(dx), String.valueOf(dy)},
+                {"Clique (mouse)", String.valueOf(dispositivo.x), String.valueOf(dispositivo.y)},
                 {rotuloNdc(centrado), formatar(ndc.x), formatar(ndc.y)},
                 {"Mundo", formatar(ponto.x), formatar(ponto.y)}
             });

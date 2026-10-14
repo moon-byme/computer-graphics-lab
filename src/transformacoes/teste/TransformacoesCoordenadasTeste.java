@@ -1,5 +1,7 @@
 package transformacoes.teste;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import transformacoes.model.Pixel;
 import transformacoes.model.Ponto;
 import static transformacoes.model.TransformadorCoordenadas.*;
@@ -46,7 +48,41 @@ public final class TransformacoesCoordenadasTeste {
             }
         }
         if (ativos != 1) throw new AssertionError("Numero de pixels ativos: " + ativos);
+        Tela telaAmpliada = new Tela();
+        telaAmpliada.setResolucao(8, 6);
+        telaAmpliada.drawPixel(4, 3);
+        telaAmpliada.setVisualizacao(4, true);
+        if (telaAmpliada.getImagem().getWidth() != 8
+                || telaAmpliada.getImagem().getHeight() != 6
+                || telaAmpliada.getPreferredSize().width != 32
+                || telaAmpliada.getPreferredSize().height != 24) {
+            throw new AssertionError("A ampliacao nao deve alterar o frame buffer original");
+        }
+        Pixel cliqueAmpliado = telaAmpliada.toDisplayPixel(17, 13);
+        Pixel cantoInferiorDireito = telaAmpliada.toDisplayPixel(31, 23);
+        if (cliqueAmpliado.x != 4 || cliqueAmpliado.y != 3
+                || cantoInferiorDireito.x != 7 || cantoInferiorDireito.y != 5) {
+            throw new AssertionError("Conversao do clique ampliado para coordenadas DC");
+        }
+        BufferedImage visualizacao = new BufferedImage(32, 24, BufferedImage.TYPE_INT_RGB);
+        telaAmpliada.setSize(32, 24);
+        Graphics2D graficos = visualizacao.createGraphics();
+        telaAmpliada.paint(graficos);
+        graficos.dispose();
+        if ((visualizacao.getRGB(17, 13) & 0xFFFFFF) != Tela.COR_PIXEL
+                || (visualizacao.getRGB(4, 1) & 0xFFFFFF) == Tela.COR_FUNDO
+                || (telaAmpliada.getImagem().getRGB(1, 0) & 0xFFFFFF) != Tela.COR_FUNDO) {
+            throw new AssertionError("Ampliacao/grade deve ser somente visualizacao");
+        }
+        telaAmpliada.setVisualizacao(4, false);
+        graficos = visualizacao.createGraphics();
+        telaAmpliada.paint(graficos);
+        graficos.dispose();
+        if ((visualizacao.getRGB(4, 1) & 0xFFFFFF) != Tela.COR_FUNDO) {
+            throw new AssertionError("A grade deve poder ser desativada");
+        }
         System.out.println("OK: ambos os cenarios, transformacoes inversas e limites.");
         System.out.println("OK: exatamente 1 pixel verde #00FF00 no frame buffer.");
+        System.out.println("OK: ampliacao, grade e cliques preservam as coordenadas DC originais.");
     }
 }
