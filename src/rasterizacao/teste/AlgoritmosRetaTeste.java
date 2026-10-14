@@ -2,7 +2,6 @@ package rasterizacao.teste;
 
 import rasterizacao.model.Bresenham;
 import rasterizacao.model.DDA;
-import transformacoes.model.Pixel;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -96,7 +95,6 @@ public class AlgoritmosRetaTeste {
         conferirSequencia("DDA - vertical inversa", dda(2, 4, 2, 1),
                 new int[][] {{2,4}, {2,3}, {2,2}, {2,1}});
         verificarDiferentesDirecoes("DDA", true);
-        System.out.println("DDA: testes concluídos com sucesso.");
     }
 
     private static void testarBresenham() {
@@ -111,7 +109,6 @@ public class AlgoritmosRetaTeste {
                 new int[][] {{2,1}, {2,2}, {2,3}, {2,4}});
         verificarDiferentesDirecoes("Bresenham", false);
         verificarSimetriaOitoOitantes();
-        System.out.println("Bresenham: testes concluídos com sucesso.");
     }
 
     private static void verificarDiferentesDirecoes(String nome, boolean usaDDA) {
