@@ -287,7 +287,7 @@ public class TransformacoesView extends JFrame {
         c.insets = new Insets(4, 0, 0, 0);
         conteudo.add(algoritmos, c);
         c.insets = new Insets(6, 0, 0, 0);
-        conteudo.add(rotuloSecundario("As implementações dos algoritmos serão adicionadas depois."), c);
+        conteudo.add(rotuloSecundario("Escolha uma primitiva e o algoritmo correspondente."), c);
         return conteudo;
     }
 

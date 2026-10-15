@@ -1,6 +1,6 @@
 package transformacoes.model;
 
-/** Algoritmos selecionaveis; as implementacoes serao adicionadas separadamente. */
+/** Algoritmos implementados e disponíveis para seleção na interface. */
 public enum TipoAlgoritmo {
     DDA_RETA("Reta — DDA", FormaRasterizacao.Tipo.RETA),
     BRESENHAM_RETA("Reta — Bresenham", FormaRasterizacao.Tipo.RETA),

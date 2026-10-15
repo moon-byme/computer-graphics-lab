@@ -23,7 +23,7 @@ public class CircunferenciaController {
     }
 
     /*
-     * Entrada em texto, como vira dos campos da futura View.
+     * Entrada em texto, como recebida de campos de uma interface.
      * Retorna quantos pixels foram ativados.
      */
     public int desenhar(String algoritmo, String xc, String yc, String raio) {

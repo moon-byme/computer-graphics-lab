@@ -4,7 +4,7 @@ Implementações em Java das atividades da disciplina:
 
 1. **Transformações de coordenadas** (aula G2): coordenadas do mundo → coordenadas normalizadas do dispositivo (NDC) → coordenadas do display.
 2. **Tabela de cores** (exercício complementar da aula G2): **paleta RGB de 24 bits endereçada por índices de 12 bits**.
-3. **Rasterização** (aula G3): retas (**DDA** e **Bresenham**) e circunferências (**polinomial**, **trigonométrico** e **ponto médio**), com uma interface gráfica que permite desenhar pontos e está preparada para integrar algoritmos de reta e circunferência.
+3. **Rasterização** (aula G3): retas (**DDA** e **Bresenham**) e circunferências (**polinomial**, **trigonométrico** e **ponto médio**), integradas à interface gráfica para desenhar pontos, retas e circunferências.
 
 O framebuffer desenha pixels em verde (`#00FF00`); a interface também oferece ampliação e grade opcionais para inspecionar a imagem.
 
@@ -50,7 +50,7 @@ src/
 │   │   └── Hexadecimal.java             # leitura/validação de valores hexadecimais
 │   └── teste/
 │       └── TabelaCoresTeste.java        # --test
-└── rasterizacao/                        # 3. Rasterização (ainda sem View)
+└── rasterizacao/                        # 3. Algoritmos integrados à View de transformações
     ├── model/
     │   ├── PlotadorPixel.java           # destino de cada pixel calculado
     │   ├── DDA.java                     # reta: método do declive
@@ -63,7 +63,8 @@ src/
     ├── controller/
     │   └── CircunferenciaController.java# validação e escolha do algoritmo
     ├── integracao/
-    │   └── RenderizadorRetas.java       # liga DDA/Bresenham à Tela
+    │   ├── AdaptadoresRasterizacao.java # liga os cinco algoritmos ao controller da View
+    │   └── RenderizadorRetas.java       # liga DDA/Bresenham diretamente à Tela
     └── teste/
         ├── AlgoritmosRetaTeste.java
         └── AlgoritmosCircunferenciaTeste.java
@@ -75,9 +76,9 @@ src/
 
 ## Algoritmos de rasterização
 
-A interface `AlgoritmoRasterizacao` define uma saída comum em pixels DC para que os algoritmos não precisem conhecer nem alterar o renderer (`Tela.drawPixels`). A interface aceita as primitivas ponto, reta e circunferência. O ponto usa diretamente `drawPixel`; o renderer também aceita uma coleção de pixels para as formas compostas. O seletor lista cinco algoritmos: DDA e Bresenham para retas; polinomial, trigonométrico e ponto médio para circunferências. Os algoritmos do pacote `rasterizacao` estão implementados e testados de forma independente; para desenhá-los pela interface, ainda é necessário registrá-los no controller com `registrarAlgoritmo`.
+A interface `AlgoritmoRasterizacao` define uma saída comum em pixels DC para que os algoritmos não precisem conhecer nem alterar o renderer (`Tela.drawPixels`). A interface aceita as primitivas ponto, reta e circunferência. O ponto usa diretamente `drawPixel`; os adaptadores entregam à tela os pixels das formas compostas. O seletor lista os cinco algoritmos integrados: DDA e Bresenham para retas; polinomial, trigonométrico e ponto médio para circunferências. O controller registra automaticamente os adaptadores ao iniciar.
 
-Cada algoritmo registrado recebe uma `FormaRasterizacao` com coordenadas DC (ponto, reta com início/fim ou circunferência com centro/raio inteiro em pixels DC) e retorna os pixels a ativar. A interface confere se a forma corresponde ao tipo do algoritmo. Os campos de ponto inicial/centro e de reta na interface são informados em coordenadas do mundo e convertidos para DC antes da rasterização. Enquanto os algoritmos não forem registrados no controller, a interface exibe um aviso e não desenha as retas/circunferências.
+Cada algoritmo recebe uma `FormaRasterizacao` com coordenadas DC (ponto, reta com início/fim ou circunferência com centro/raio inteiro em pixels DC) e retorna os pixels a ativar. A interface confere se a forma corresponde ao tipo do algoritmo. Os campos de ponto inicial/centro e de reta na interface são informados em coordenadas do mundo e convertidos para DC antes da rasterização.
 
 ## Compilação
 
@@ -107,7 +108,7 @@ Na interface:
 2. Defina a janela do mundo (`xmin`, `xmax`, `ymin`, `ymax`), com `xmin < xmax` e `ymin < ymax`.
 3. Selecione **Ponto**, **Reta** ou **Circunferência**. Informe o ponto ou centro `(x, y)`; para reta, informe também o ponto final `(x final, y final)`; para circunferência, informe o raio em pixels DC.
 4. Selecione um dos dois cenários NDC: `[0,1] × [0,1]` ou `[-1,1] × [-1,1]`.
-5. Clique em **Desenhar**. Para ponto, o display mostra um pixel verde na posição calculada. Para reta ou circunferência, selecione o algoritmo correspondente; enquanto não for registrado no controller, a interface informa que o desenho está pendente. O painel **Resultados** exibe as coordenadas calculadas.
+5. Clique em **Desenhar**. Para ponto, o display mostra um pixel verde na posição calculada. Para reta ou circunferência, a interface usa o algoritmo selecionado. O painel **Resultados** exibe as coordenadas calculadas e a quantidade de pixels desenhados.
 6. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
 
 O framebuffer mantém a resolução original; os pixels são armazenados em verde. Use **Ampliação** (1×, 2×, 4× ou 8×) para inspecioná-los; **Grade** desenha limites entre pixels quando a ampliação é maior que 1×. Esses recursos afetam apenas a visualização, não alteram os pixels armazenados nem as coordenadas DC. Cliques na imagem ampliada são convertidos de volta às coordenadas do display original. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
@@ -205,7 +206,7 @@ Todos os algoritmos trabalham em coordenadas inteiras do dispositivo, sem a conv
 
 O Bresenham resolve o caso do 1º octante e cobre os outros sete por **simetria**: inverte o sentido de x e/ou de y (reflexão nos eixos) e troca x com y quando a reta é mais inclinada que 45° (reflexão em `y = x`). Os dois algoritmos incluem ambos os extremos.
 
-A classe `integracao/RenderizadorRetas` liga os dois algoritmos à `Tela` do módulo de transformações (`tela::drawPixel`) e ficará disponível para a futura interface.
+A classe `integracao/RenderizadorRetas` liga os dois algoritmos à `Tela` do módulo de transformações (`tela::drawPixel`). A classe `integracao/AdaptadoresRasterizacao` os adapta ao controller para que os cinco algoritmos possam ser escolhidos e usados pela interface.
 
 Exemplos dos slides, conferidos no teste:
 
@@ -259,13 +260,13 @@ Em `(7,7)` o oitante chega à diagonal e termina; a simetria completa a circunfe
 
 #### Controller
 
-`CircunferenciaController` valida a entrada, escolhe o algoritmo e envia os pixels ao destino informado no construtor. Ele aceita os valores como texto, do jeito que virão dos campos da futura View, ou já convertidos:
+`CircunferenciaController` valida a entrada, escolhe o algoritmo e envia os pixels ao destino informado no construtor. Ele aceita os valores como texto ou já convertidos:
 
 - **Algoritmo**: `polinomial`, `trigonometrico` ou `ponto medio`, sem diferenciar maiúsculas, acentos, espaços, `_` ou `-`.
 - **Centro**: quaisquer inteiros.
 - **Raio**: inteiro de 0 a 10 000 (`RAIO_MAXIMO`).
 
-O método `desenhar` retorna a quantidade de pixels ativados. Na futura tela, basta criar `new CircunferenciaController(tela::drawPixel)`.
+O método `desenhar` retorna a quantidade de pixels ativados. A interface gráfica integrada usa os mesmos algoritmos por meio de `AdaptadoresRasterizacao` e do `TransformacoesController`.
 
 #### Testes
 

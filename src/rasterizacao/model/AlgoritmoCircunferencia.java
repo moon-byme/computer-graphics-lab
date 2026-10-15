@@ -1,6 +1,6 @@
 package rasterizacao.model;
 
-/* Os tres algoritmos de circunferencia, para o Controller (e a futura View) escolherem um deles. */
+/* Os tres algoritmos de circunferencia, compartilhados pelos controllers e adaptadores. */
 public enum AlgoritmoCircunferencia {
     POLINOMIAL("Polinomial") {
         @Override

@@ -3,6 +3,9 @@ package transformacoes.teste;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.Map;
+import java.util.EnumMap;
+import rasterizacao.integracao.AdaptadoresRasterizacao;
 import transformacoes.model.AlgoritmoRasterizacao;
 import transformacoes.model.FormaRasterizacao;
 import transformacoes.model.Pixel;
@@ -88,6 +91,21 @@ public final class TransformacoesCoordenadasTeste {
         if (TipoAlgoritmo.values().length != 5) {
             throw new AssertionError("Catalogo dos cinco algoritmos");
         }
+        Map<TipoAlgoritmo, AlgoritmoRasterizacao> algoritmos = new EnumMap<>(TipoAlgoritmo.class);
+        for (AlgoritmoRasterizacao algoritmo : AdaptadoresRasterizacao.criar()) {
+            algoritmos.put(algoritmo.getTipo(), algoritmo);
+        }
+        if (algoritmos.size() != TipoAlgoritmo.values().length) {
+            throw new AssertionError("Todos os algoritmos devem estar integrados");
+        }
+        Tela telaAlgoritmos = new Tela();
+        telaAlgoritmos.setResolucao(32, 32);
+        validarReta(algoritmos.get(TipoAlgoritmo.DDA_RETA), TipoAlgoritmo.DDA_RETA, telaAlgoritmos);
+        validarReta(algoritmos.get(TipoAlgoritmo.BRESENHAM_RETA),
+                    TipoAlgoritmo.BRESENHAM_RETA, telaAlgoritmos);
+        validarCircunferencia(algoritmos.get(TipoAlgoritmo.CIRCUNFERENCIA_POLINOMIAL), telaAlgoritmos);
+        validarCircunferencia(algoritmos.get(TipoAlgoritmo.CIRCUNFERENCIA_TRIGONOMETRICA), telaAlgoritmos);
+        validarCircunferencia(algoritmos.get(TipoAlgoritmo.CIRCUNFERENCIA_PONTO_MEDIO), telaAlgoritmos);
         AlgoritmoRasterizacao algoritmoTeste = new AlgoritmoRasterizacao() {
             @Override public TipoAlgoritmo getTipo() { return TipoAlgoritmo.DDA_RETA; }
             @Override public List<Pixel> calcularPixels(FormaRasterizacao forma) {
@@ -117,6 +135,44 @@ public final class TransformacoesCoordenadasTeste {
         System.out.println("OK: ambos os cenarios, transformacoes inversas e limites.");
         System.out.println("OK: exatamente 1 pixel verde #00FF00 no frame buffer.");
         System.out.println("OK: ampliacao, grade e cliques preservam as coordenadas DC originais.");
-        System.out.println("OK: cinco algoritmos catalogados e saida rasterizada pela tela comum.");
+        System.out.println("OK: cinco algoritmos adaptados e conectados a saida rasterizada da tela.");
+    }
+
+    private static void validarReta(
+            AlgoritmoRasterizacao algoritmo, TipoAlgoritmo tipo, Tela tela) {
+        List<Pixel> pixels = algoritmo.rasterizar(
+                FormaRasterizacao.reta(new Pixel(2, 3), new Pixel(8, 6)));
+        if (pixels.size() != 7 || !contem(pixels, 2, 3) || !contem(pixels, 8, 6)) {
+            throw new AssertionError("Adaptador da reta " + tipo);
+        }
+        tela.limpar();
+        tela.drawPixels(pixels);
+        verificarPixel(tela, 2, 3);
+        verificarPixel(tela, 8, 6);
+    }
+
+    private static void validarCircunferencia(AlgoritmoRasterizacao algoritmo, Tela tela) {
+        List<Pixel> pixels = algoritmo.rasterizar(
+                FormaRasterizacao.circunferencia(new Pixel(10, 12), 5));
+        if (pixels.size() < 8 || !contem(pixels, 10, 7) || !contem(pixels, 10, 17)
+                || !contem(pixels, 5, 12) || !contem(pixels, 15, 12)) {
+            throw new AssertionError("Adaptador de circunferencia " + algoritmo.getTipo());
+        }
+        tela.limpar();
+        tela.drawPixels(pixels);
+        verificarPixel(tela, 10, 7);
+        verificarPixel(tela, 10, 17);
+        verificarPixel(tela, 5, 12);
+        verificarPixel(tela, 15, 12);
+    }
+
+    private static boolean contem(List<Pixel> pixels, int x, int y) {
+        return pixels.stream().anyMatch(pixel -> pixel.x == x && pixel.y == y);
+    }
+
+    private static void verificarPixel(Tela tela, int x, int y) {
+        if ((tela.getImagem().getRGB(x, y) & 0xFFFFFF) != Tela.COR_PIXEL) {
+            throw new AssertionError("O algoritmo nao chegou a Tela em DC (" + x + ", " + y + ")");
+        }
     }
 }

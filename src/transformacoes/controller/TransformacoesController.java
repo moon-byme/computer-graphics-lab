@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.swing.*;
+import rasterizacao.integracao.AdaptadoresRasterizacao;
 import transformacoes.model.AlgoritmoRasterizacao;
 import transformacoes.model.FormaRasterizacao;
 import transformacoes.model.Pixel;
@@ -27,6 +28,9 @@ public class TransformacoesController {
 
     public TransformacoesController(TransformacoesView view) {
         this.view = view;
+        for (AlgoritmoRasterizacao algoritmo : AdaptadoresRasterizacao.criar()) {
+            registrarAlgoritmo(algoritmo);
+        }
 
         view.addMostrarListener(e -> atualizar(true));
         view.addVisualizacaoListener(e -> aplicarVisualizacao());
