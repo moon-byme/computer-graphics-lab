@@ -7,7 +7,7 @@ import transformacoes.view.TransformacoesView;
 
 /** Laboratorio I: transformacoes Mundo -> NDC -> Dispositivo. Ponto de entrada. */
 public class TransformacoesCoordenadas {
-    static void main(String[] args) {
+    public static void main(String[] args) {
         if (args.length > 0 && "--test".equals(args[0])) {
             TransformacoesCoordenadasTeste.testar();
         } else {

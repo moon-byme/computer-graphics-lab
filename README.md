@@ -2,9 +2,11 @@
 
 Implementações em Java das atividades da disciplina:
 
-1. **Transformações de coordenadas** (aula G2): coordenadas do mundo → coordenadas normalizadas do dispositivo (NDC) → coordenadas do display, com ativação de **um único pixel verde (`#00FF00`)**.
+1. **Transformações de coordenadas** (aula G2): coordenadas do mundo → coordenadas normalizadas do dispositivo (NDC) → coordenadas do display.
 2. **Tabela de cores** (exercício complementar da aula G2): **paleta RGB de 24 bits endereçada por índices de 12 bits**.
-3. **Rasterização**: retas da aula G3 (**DDA** e **Bresenham**) e circunferências (**polinomial**, **trigonométrico** e **ponto médio**).
+3. **Rasterização** (aula G3): retas (**DDA** e **Bresenham**) e circunferências (**polinomial**, **trigonométrico** e **ponto médio**), com uma interface gráfica que permite desenhar pontos e está preparada para integrar algoritmos de reta e circunferência.
+
+O framebuffer desenha pixels em verde (`#00FF00`); a interface também oferece ampliação e grade opcionais para inspecionar a imagem.
 
 
 ## Pré-requisitos
@@ -71,6 +73,11 @@ src/
 - **View**: componentes Swing; expõe getters/setters e registro de listeners.
 - **Controller**: recebe os eventos da View, valida a entrada e atualiza Model e View.
 
+## Algoritmos de rasterização
+
+A interface `AlgoritmoRasterizacao` define uma saída comum em pixels DC para que os algoritmos não precisem conhecer nem alterar o renderer (`Tela.drawPixels`). A interface aceita as primitivas ponto, reta e circunferência. O ponto usa diretamente `drawPixel`; o renderer também aceita uma coleção de pixels para as formas compostas. O seletor lista cinco algoritmos: DDA e Bresenham para retas; polinomial, trigonométrico e ponto médio para circunferências. Os algoritmos do pacote `rasterizacao` estão implementados e testados de forma independente; para desenhá-los pela interface, ainda é necessário registrá-los no controller com `registrarAlgoritmo`.
+
+Cada algoritmo registrado recebe uma `FormaRasterizacao` com coordenadas DC (ponto, reta com início/fim ou circunferência com centro/raio inteiro em pixels DC) e retorna os pixels a ativar. A interface confere se a forma corresponde ao tipo do algoritmo. Os campos de ponto inicial/centro e de reta na interface são informados em coordenadas do mundo e convertidos para DC antes da rasterização. Enquanto os algoritmos não forem registrados no controller, a interface exibe um aviso e não desenha as retas/circunferências.
 
 ## Compilação
 
@@ -98,12 +105,12 @@ Na interface:
 
 1. No painel **Resolução do display**, escolha uma resolução pré-definida (de 320 × 240 a 1920 × 1080; a inicial é 640 × 480) ou **Personalizada**, com largura e altura entre 2 e 4096 px, confirmadas em **Aplicar**.
 2. Defina a janela do mundo (`xmin`, `xmax`, `ymin`, `ymax`), com `xmin < xmax` e `ymin < ymax`.
-3. Informe o ponto `(x, y)` da janela. Se ele estiver fora da janela, nenhum pixel é ativado.
+3. Selecione **Ponto**, **Reta** ou **Circunferência**. Informe o ponto ou centro `(x, y)`; para reta, informe também o ponto final `(x final, y final)`; para circunferência, informe o raio em pixels DC.
 4. Selecione um dos dois cenários NDC: `[0,1] × [0,1]` ou `[-1,1] × [-1,1]`.
-5. Clique em **Ativar pixel**. O display (fundo branco) mostra um pixel verde na posição calculada, e o painel **Resultados** exibe as coordenadas no mundo, em NDC e no dispositivo.
-6. Opcionalmente, clique no display para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo). O ponto calculado preenche os campos `x` e `y`, e o pixel é reativado.
+5. Clique em **Desenhar**. Para ponto, o display mostra um pixel verde na posição calculada. Para reta ou circunferência, selecione o algoritmo correspondente; enquanto não for registrado no controller, a interface informa que o desenho está pendente. O painel **Resultados** exibe as coordenadas calculadas.
+6. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
 
-O desenho usa `BufferedImage.setRGB()`, sem ampliar o ponto ou adicionar grade/eixos. A área de desenho tem exatamente a resolução escolhida: 1 pixel do frame buffer corresponde a 1 pixel na tela.
+O framebuffer mantém a resolução original; os pixels são armazenados em verde. Use **Ampliação** (1×, 2×, 4× ou 8×) para inspecioná-los; **Grade** desenha limites entre pixels quando a ampliação é maior que 1×. Esses recursos afetam apenas a visualização, não alteram os pixels armazenados nem as coordenadas DC. Cliques na imagem ampliada são convertidos de volta às coordenadas do display original. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
 
 ### Procedimentos solicitados na aula G2
 

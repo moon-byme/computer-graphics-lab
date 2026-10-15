@@ -1,7 +1,13 @@
 package transformacoes.teste;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.util.List;
+import transformacoes.model.AlgoritmoRasterizacao;
+import transformacoes.model.FormaRasterizacao;
 import transformacoes.model.Pixel;
 import transformacoes.model.Ponto;
+import transformacoes.model.TipoAlgoritmo;
 import static transformacoes.model.TransformadorCoordenadas.*;
 import transformacoes.view.Tela;
 
@@ -46,7 +52,71 @@ public final class TransformacoesCoordenadasTeste {
             }
         }
         if (ativos != 1) throw new AssertionError("Numero de pixels ativos: " + ativos);
+        Tela telaAmpliada = new Tela();
+        telaAmpliada.setResolucao(8, 6);
+        telaAmpliada.drawPixel(4, 3);
+        telaAmpliada.setVisualizacao(4, true);
+        if (telaAmpliada.getImagem().getWidth() != 8
+                || telaAmpliada.getImagem().getHeight() != 6
+                || telaAmpliada.getPreferredSize().width != 32
+                || telaAmpliada.getPreferredSize().height != 24) {
+            throw new AssertionError("A ampliacao nao deve alterar o frame buffer original");
+        }
+        Pixel cliqueAmpliado = telaAmpliada.toDisplayPixel(17, 13);
+        Pixel cantoInferiorDireito = telaAmpliada.toDisplayPixel(31, 23);
+        if (cliqueAmpliado.x != 4 || cliqueAmpliado.y != 3
+                || cantoInferiorDireito.x != 7 || cantoInferiorDireito.y != 5) {
+            throw new AssertionError("Conversao do clique ampliado para coordenadas DC");
+        }
+        BufferedImage visualizacao = new BufferedImage(32, 24, BufferedImage.TYPE_INT_RGB);
+        telaAmpliada.setSize(32, 24);
+        Graphics2D graficos = visualizacao.createGraphics();
+        telaAmpliada.paint(graficos);
+        graficos.dispose();
+        if ((visualizacao.getRGB(17, 13) & 0xFFFFFF) != Tela.COR_PIXEL
+                || (visualizacao.getRGB(4, 1) & 0xFFFFFF) == Tela.COR_FUNDO
+                || (telaAmpliada.getImagem().getRGB(1, 0) & 0xFFFFFF) != Tela.COR_FUNDO) {
+            throw new AssertionError("Ampliacao/grade deve ser somente visualizacao");
+        }
+        telaAmpliada.setVisualizacao(4, false);
+        graficos = visualizacao.createGraphics();
+        telaAmpliada.paint(graficos);
+        graficos.dispose();
+        if ((visualizacao.getRGB(4, 1) & 0xFFFFFF) != Tela.COR_FUNDO) {
+            throw new AssertionError("A grade deve poder ser desativada");
+        }
+        if (TipoAlgoritmo.values().length != 5) {
+            throw new AssertionError("Catalogo dos cinco algoritmos");
+        }
+        AlgoritmoRasterizacao algoritmoTeste = new AlgoritmoRasterizacao() {
+            @Override public TipoAlgoritmo getTipo() { return TipoAlgoritmo.DDA_RETA; }
+            @Override public List<Pixel> calcularPixels(FormaRasterizacao forma) {
+                return List.of(forma.getInicio(), forma.getFim());
+            }
+        };
+        List<Pixel> pixelsReta = algoritmoTeste.rasterizar(
+                FormaRasterizacao.reta(new Pixel(1, 2), new Pixel(6, 4)));
+        telaAmpliada.limpar();
+        telaAmpliada.drawPixels(pixelsReta);
+        if ((telaAmpliada.getImagem().getRGB(1, 2) & 0xFFFFFF) != Tela.COR_PIXEL
+                || (telaAmpliada.getImagem().getRGB(6, 4) & 0xFFFFFF) != Tela.COR_PIXEL) {
+            throw new AssertionError("Saida do algoritmo deve usar a renderizacao comum");
+        }
+        telaAmpliada.drawPixel(3, 3);
+        FormaRasterizacao ponto = FormaRasterizacao.ponto(new Pixel(3, 3));
+        if (ponto.getTipo() != FormaRasterizacao.Tipo.PONTO
+                || (telaAmpliada.getImagem().getRGB(3, 3) & 0xFFFFFF) != Tela.COR_PIXEL) {
+            throw new AssertionError("A primitiva ponto deve continuar usando drawPixel");
+        }
+        try {
+            algoritmoTeste.rasterizar(FormaRasterizacao.circunferencia(new Pixel(3, 3), 2));
+            throw new AssertionError("Algoritmo de reta nao deve aceitar circunferencia");
+        } catch (IllegalArgumentException esperado) {
+            // A interface comum rejeita formas incompatíveis antes da renderização.
+        }
         System.out.println("OK: ambos os cenarios, transformacoes inversas e limites.");
         System.out.println("OK: exatamente 1 pixel verde #00FF00 no frame buffer.");
+        System.out.println("OK: ampliacao, grade e cliques preservam as coordenadas DC originais.");
+        System.out.println("OK: cinco algoritmos catalogados e saida rasterizada pela tela comum.");
     }
 }

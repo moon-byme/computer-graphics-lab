@@ -1,0 +1,26 @@
+# Java build output
+/out/
+/bin/
+/build/
+/target/
+*.class
+
+# IDE files that are specific to each contributor
+/.idea/
+*.iml
+/.classpath
+/.project
+/.settings/
+.vscode/settings.json
+.vscode/*.code-workspace
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*~
