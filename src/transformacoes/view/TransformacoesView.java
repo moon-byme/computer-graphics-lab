@@ -51,6 +51,7 @@ public class TransformacoesView extends JFrame {
         "[0,1] x [0,1]", "[-1,1] x [-1,1]"
     });
     private final JButton mostrar = new JButton("Desenhar");
+    private final JButton limparTela = new JButton("Limpar tela");
     private final JComboBox<FormaRasterizacao.Tipo> tipoForma =
             new JComboBox<>(FormaRasterizacao.Tipo.values());
     private final JLabel x2Rotulo = new JLabel("x final");
@@ -126,6 +127,7 @@ public class TransformacoesView extends JFrame {
         segundaLinha.add(new JLabel("NDC"));
         segundaLinha.add(cenario);
         segundaLinha.add(mostrar);
+        segundaLinha.add(limparTela);
 
         JPanel terceiraLinha = linhaDeCampos();
         terceiraLinha.add(new JLabel("Primitiva"));
@@ -417,6 +419,10 @@ public class TransformacoesView extends JFrame {
     }
 
     public void addMostrarListener(ActionListener listener) { mostrar.addActionListener(listener); }
+
+    public void addLimparTelaListener(ActionListener listener) {
+        limparTela.addActionListener(listener);
+    }
 
     public void addCenarioListener(ActionListener listener) { cenario.addActionListener(listener); }
 

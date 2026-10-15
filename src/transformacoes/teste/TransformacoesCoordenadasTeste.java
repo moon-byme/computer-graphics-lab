@@ -55,6 +55,10 @@ public final class TransformacoesCoordenadasTeste {
             }
         }
         if (ativos != 1) throw new AssertionError("Numero de pixels ativos: " + ativos);
+        telaTeste.limpar();
+        if ((telaTeste.getImagem().getRGB(400, 300) & 0xFFFFFF) != Tela.COR_FUNDO) {
+            throw new AssertionError("Limpar tela deve restaurar o fundo branco");
+        }
         Tela telaAmpliada = new Tela();
         telaAmpliada.setResolucao(8, 6);
         telaAmpliada.drawPixel(4, 3);

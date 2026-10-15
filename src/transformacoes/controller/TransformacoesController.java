@@ -33,6 +33,7 @@ public class TransformacoesController {
         }
 
         view.addMostrarListener(e -> atualizar(true));
+        view.addLimparTelaListener(e -> limparTela());
         view.addVisualizacaoListener(e -> aplicarVisualizacao());
         view.addAlgoritmoListener(e -> selecionarAlgoritmo());
         view.addFormaListener(e -> selecionarForma());
@@ -49,6 +50,13 @@ public class TransformacoesController {
 
     private void aplicarVisualizacao() {
         view.setVisualizacaoDisplay(view.getAmpliacao(), view.isGradeAtiva());
+    }
+
+    private void limparTela() {
+        view.limparTela();
+        view.limparResultados();
+        view.limparInversa();
+        view.setStatus("Tela limpa.", false);
     }
 
     private void selecionarAlgoritmo() {

@@ -109,7 +109,8 @@ Na interface:
 3. Selecione **Ponto**, **Reta** ou **Circunferência**. Informe o ponto ou centro `(x, y)`; para reta, informe também o ponto final `(x final, y final)`; para circunferência, informe o raio em pixels DC.
 4. Selecione um dos dois cenários NDC: `[0,1] × [0,1]` ou `[-1,1] × [-1,1]`.
 5. Clique em **Desenhar**. Para ponto, o display mostra um pixel verde na posição calculada. Para reta ou circunferência, a interface usa o algoritmo selecionado. O painel **Resultados** exibe as coordenadas calculadas e a quantidade de pixels desenhados.
-6. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
+6. Clique em **Limpar tela** para apagar os pixels e limpar os resultados sem alterar os valores informados nos campos.
+7. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
 
 O framebuffer mantém a resolução original; os pixels são armazenados em verde. Use **Ampliação** (1×, 2×, 4× ou 8×) para inspecioná-los; **Grade** desenha limites entre pixels quando a ampliação é maior que 1×. Esses recursos afetam apenas a visualização, não alteram os pixels armazenados nem as coordenadas DC. Cliques na imagem ampliada são convertidos de volta às coordenadas do display original. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
 
