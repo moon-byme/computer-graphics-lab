@@ -4,10 +4,9 @@ Implementações em Java das atividades da disciplina:
 
 1. **Transformações de coordenadas** (aula G2): coordenadas do mundo → coordenadas normalizadas do dispositivo (NDC) → coordenadas do display.
 2. **Tabela de cores** (exercício complementar da aula G2): **paleta RGB de 24 bits endereçada por índices de 12 bits**.
-3. **Rasterização** (aula G3): retas (**DDA** e **Bresenham**) e circunferências (**polinomial**, **trigonométrico** e **ponto médio**), integradas à interface gráfica para desenhar pontos, retas e circunferências.
+3. **Rasterização** (aula G3): retas (**DDA** e **Bresenham**), circunferências (**polinomial**, **trigonométrico** e **ponto médio**) e polígonos (algoritmo do ponto médio para as arestas), integrados à interface gráfica para desenhar pontos, retas, circunferências e polígonos.
 
 O framebuffer desenha pixels em verde (`#00FF00`); a interface também oferece ampliação e grade opcionais para inspecionar a imagem.
-
 
 ## Pré-requisitos
 
@@ -25,60 +24,67 @@ O código segue o padrão **MVC**, com um pacote por aplicação:
 
 ```text
 src/
-├── transformacoes/                      # 1. Transformações de coordenadas
-│   ├── TransformacoesCoordenadas.java   # ponto de entrada (main)
+├── transformacoes/                              # 1. Transformações de coordenadas
+│   ├── TransformacoesCoordenadas.java           # ponto de entrada (main)
 │   ├── model/
-│   │   ├── Ponto.java                   # coordenadas reais (mundo/NDC)
-│   │   ├── Pixel.java                   # posição no dispositivo
-│   │   └── TransformadorCoordenadas.java# userToNdc, ndcToUser, ndcToDc, inpToNdc
+│   │   ├── Ponto.java                           # coordenadas reais (mundo/NDC)
+│   │   ├── Pixel.java                           # posição no dispositivo
+│   │   ├── Poligono.java                        # lista ordenada de vértices cartesianos
+│   │   ├── FormaRasterizacao.java               # representação das primitivas a rasterizar
+│   │   ├── AlgoritmoRasterizacao.java            # contrato comum dos algoritmos integrados
+│   │   ├── TipoAlgoritmo.java                   # enum dos algoritmos disponíveis
+│   │   └── TransformadorCoordenadas.java        # userToNdc, ndcToUser, ndcToDc, inpToNdc
 │   ├── view/
-│   │   ├── TransformacoesView.java      # janela e campos (sem regras de negócio)
-│   │   └── Tela.java                    # frame buffer raster (BufferedImage)
+│   │   ├── TransformacoesView.java              # janela, campos e seleção das primitivas
+│   │   └── Tela.java                            # framebuffer raster (BufferedImage)
 │   ├── controller/
-│   │   └── TransformacoesController.java# eventos, validação e orquestração
+│   │   └── TransformacoesController.java        # eventos, validação e orquestração
 │   └── teste/
-│       └── TransformacoesCoordenadasTeste.java   # --test
-├── tabelacores/                         # 2. Exercício complementar
-│   ├── TabelaCores.java                 # ponto de entrada (main)
+│       └── TransformacoesCoordenadasTeste.java  # testes de transformação e integração
+├── tabelacores/                                 # 2. Exercício complementar
+│   ├── TabelaCores.java                         # ponto de entrada (main)
 │   ├── model/
-│   │   └── Paleta.java                  # 4096 entradas RGB de 24 bits
+│   │   └── Paleta.java                          # 4096 entradas RGB de 24 bits
 │   ├── view/
-│   │   └── TabelaCoresView.java         # janela, grade de amostras e detalhes
+│   │   └── TabelaCoresView.java                 # janela, grade de amostras e detalhes
 │   ├── controller/
-│   │   └── TabelaCoresController.java   # eventos, paginação e edição da paleta
+│   │   └── TabelaCoresController.java            # eventos, paginação e edição da paleta
 │   ├── util/
-│   │   └── Hexadecimal.java             # leitura/validação de valores hexadecimais
+│   │   └── Hexadecimal.java                     # leitura/validação de valores hexadecimais
 │   └── teste/
-│       └── TabelaCoresTeste.java        # --test
-└── rasterizacao/                        # 3. Algoritmos integrados à View de transformações
+│       └── TabelaCoresTeste.java                # testes da paleta
+└── rasterizacao/                                # 3. Algoritmos de rasterização
     ├── model/
-    │   ├── PlotadorPixel.java           # destino de cada pixel calculado
-    │   ├── DDA.java                     # reta: método do declive
-    │   ├── Bresenham.java               # reta: ponto médio, 8 octantes por simetria
+    │   ├── PlotadorPixel.java                   # destino de cada pixel calculado
+    │   ├── DDA.java                             # reta: método do declive
+    │   ├── Bresenham.java                      # reta: algoritmo do ponto médio
     │   ├── CircunferenciaPolinomial.java
     │   ├── CircunferenciaTrigonometrica.java
     │   ├── CircunferenciaPontoMedio.java
-    │   ├── SimetriaCircunferencia.java  # simetria de 8 pontos
-    │   └── AlgoritmoCircunferencia.java # enum com os três algoritmos
+    │   ├── SimetriaCircunferencia.java          # simetria de 8 pontos
+    │   └── AlgoritmoCircunferencia.java         # enum com os três algoritmos
     ├── controller/
-    │   └── CircunferenciaController.java# validação e escolha do algoritmo
+    │   └── CircunferenciaController.java        # validação e escolha do algoritmo
     ├── integracao/
-    │   ├── AdaptadoresRasterizacao.java # liga os cinco algoritmos ao controller da View
-    │   └── RenderizadorRetas.java       # liga DDA/Bresenham diretamente à Tela
+    │   ├── AdaptadoresRasterizacao.java          # integra os cinco algoritmos de reta e circunferência
+    │   ├── RenderizadorRetas.java               # liga DDA/Bresenham diretamente à Tela
+    │   └── RasterizadorPoligono.java             # rasteriza as arestas do polígono com Bresenham
     └── teste/
         ├── AlgoritmosRetaTeste.java
-        └── AlgoritmosCircunferenciaTeste.java
+        ├── AlgoritmosCircunferenciaTeste.java
+        └── RasterizadorPoligonoTeste.java
 ```
 
-- **Model**: dados e regras (transformações, paleta, algoritmos de rasterização), sem dependência de Swing.
+- **Model**: dados e regras (transformações, paleta, primitivas e algoritmos de rasterização), sem dependência direta da interface gráfica.
 - **View**: componentes Swing; expõe getters/setters e registro de listeners.
 - **Controller**: recebe os eventos da View, valida a entrada e atualiza Model e View.
+- **Integração de rasterização**: conecta os algoritmos à aplicação de transformações de coordenadas e à tela de desenho.
 
 ## Algoritmos de rasterização
 
 A interface `AlgoritmoRasterizacao` define uma saída comum em pixels DC para que os algoritmos não precisem conhecer nem alterar o renderer (`Tela.drawPixels`). A interface aceita as primitivas ponto, reta e circunferência. O ponto usa diretamente `drawPixel`; os adaptadores entregam à tela os pixels das formas compostas. O seletor lista os cinco algoritmos integrados: DDA e Bresenham para retas; polinomial, trigonométrico e ponto médio para circunferências. O controller registra automaticamente os adaptadores ao iniciar.
 
-Cada algoritmo recebe uma `FormaRasterizacao` com coordenadas DC (ponto, reta com início/fim ou circunferência com centro/raio inteiro em pixels DC) e retorna os pixels a ativar. A interface confere se a forma corresponde ao tipo do algoritmo. Os campos de ponto inicial/centro e de reta na interface são informados em coordenadas do mundo e convertidos para DC antes da rasterização.
+Cada algoritmo recebe uma `FormaRasterizacao` com coordenadas DC (ponto, reta com início/fim ou circunferência com centro/raio inteiro em pixels DC) e retorna os pixels a ativar. A interface confere se a forma corresponde ao tipo do algoritmo. Os campos de ponto inicial/centro e de reta na interface são informados em coordenadas do mundo e convertidos para DC antes da rasterização. No caso do polígono, todos os vértices informados também são convertidos de coordenadas do mundo para coordenadas de dispositivo antes do desenho.
 
 ## Compilação
 
@@ -88,9 +94,13 @@ Na raiz do repositório:
 javac -d out (Get-ChildItem -Recurse src -Filter *.java).FullName
 ```
 
-No Linux/macOS: `javac -d out $(find src -name "*.java")`.
+No Linux/macOS:
 
-A pasta `out/` não é versionada. Recompile depois de atualizar o código, senão as classes novas (como as de `rasterizacao`) não existirão em `out/`.
+```bash
+javac -d out $(find src -name "*.java")
+```
+
+A pasta `out/` não é versionada. Recompile depois de atualizar o código, senão as classes novas não existirão em `out/`.
 
 ## 1. Transformações de coordenadas
 
@@ -106,11 +116,32 @@ Na interface:
 
 1. No painel **Resolução do display**, escolha uma resolução pré-definida (de 320 × 240 a 1920 × 1080; a inicial é 640 × 480) ou **Personalizada**, com largura e altura entre 2 e 4096 px, confirmadas em **Aplicar**.
 2. Defina a janela do mundo (`xmin`, `xmax`, `ymin`, `ymax`), com `xmin < xmax` e `ymin < ymax`.
-3. Selecione **Ponto**, **Reta** ou **Circunferência**. Informe o ponto ou centro `(x, y)`; para reta, informe também o ponto final `(x final, y final)`; para circunferência, informe o raio em pixels DC.
+3. Selecione uma das primitivas disponíveis:
+  - **Ponto:** informe as coordenadas `(x, y)`.
+  - **Reta:** informe o ponto inicial `(x, y)` e o ponto final `(x final, y final)`.
+  - **Circunferência:** informe o centro `(x, y)` e o raio em pixels DC.
+  - **Polígono:** informe pelo menos três vértices no campo correspondente, no formato `x1,y1; x2,y2; x3,y3; ...`. Os vértices devem ser informados em ordem ao redor do contorno do polígono.
 4. Selecione um dos dois cenários NDC: `[0,1] × [0,1]` ou `[-1,1] × [-1,1]`.
-5. Clique em **Desenhar**. Para ponto, o display mostra um pixel verde na posição calculada. Para reta ou circunferência, a interface usa o algoritmo selecionado. O painel **Resultados** exibe as coordenadas calculadas e a quantidade de pixels desenhados.
-6. Clique em **Limpar tela** para apagar os pixels e limpar os resultados sem alterar os valores informados nos campos.
-7. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
+5. Para retas e circunferências, selecione o algoritmo desejado no campo de algoritmos. Para pontos e polígonos, a seleção de algoritmo não é necessária: pontos são desenhados diretamente e polígonos utilizam Bresenham para rasterizar suas arestas.
+6. Clique em **Desenhar**. O display mostra os pixels calculados em verde (`#00FF00`). O painel **Resultados** exibe as informações da primitiva e a quantidade de pixels desenhados.
+7. Clique em **Limpar tela** para apagar os pixels e limpar os resultados sem alterar os valores informados nos campos.
+8. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
+
+**Entrada de polígonos:**
+
+Os vértices devem ser informados em coordenadas do mundo, separados por ponto e vírgula. As coordenadas de cada vértice devem ser separadas por vírgula.
+
+Exemplo:
+
+```text
+-4,-3; 4,-3; 4,3; -4,3
+```
+
+Esse exemplo representa um retângulo com quatro vértices, centralizado na origem `(0,0)`. O polígono pode ser regular ou irregular, desde que tenha pelo menos três vértices válidos e todos estejam dentro da janela do mundo definida na interface.
+
+Os vértices são conectados na ordem informada, e o último é conectado ao primeiro para fechar o contorno. Cada aresta é rasterizada pelo algoritmo de Bresenham, correspondente ao algoritmo do ponto médio para retas estudado na aula G3. Pixels repetidos nas junções entre arestas são incluídos apenas uma vez na lista final.
+
+**Observação sobre a origem:** o polígono preenchido inicialmente na interface está centralizado na origem. Entretanto, o programa atualmente não verifica se um polígono personalizado está centralizado em `(0,0)`; ele apenas valida a quantidade e a validade dos vértices e se estão dentro da janela do mundo.
 
 O framebuffer mantém a resolução original; os pixels são armazenados em verde. Use **Ampliação** (1×, 2×, 4× ou 8×) para inspecioná-los; **Grade** desenha limites entre pixels quando a ampliação é maior que 1×. Esses recursos afetam apenas a visualização, não alteram os pixels armazenados nem as coordenadas DC. Cliques na imagem ampliada são convertidos de volta às coordenadas do display original. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
 
@@ -156,7 +187,7 @@ O ponto deve permanecer na mesma posição do display ao alternar o cenário.
 Teste automático, sem abrir a interface:
 
 ```powershell
-java -cp out transformacoes.TransformacoesCoordenadas --test
+java -Djava.awt.headless=true -cp out transformacoes.TransformacoesCoordenadas --test
 ```
 
 ## 2. Exercício complementar — Tabela de cores
@@ -189,25 +220,31 @@ Exemplos iniciais:
 Teste automático:
 
 ```powershell
-java -cp out tabelacores.TabelaCores --test
+java -Djava.awt.headless=true -cp out tabelacores.TabelaCores --test
 ```
 
-## 3. Rasterização de retas e circunferências
+No JDK 21, acrescente `--enable-preview` ao comando:
 
-Pacote: `rasterizacao`. Ainda não há interface gráfica nem ponto de entrada próprio; os algoritmos são verificados pelos testes automáticos.
+```powershell
+java --enable-preview -Djava.awt.headless=true -cp out tabelacores.TabelaCores --test
+```
 
-Todos os algoritmos trabalham em coordenadas inteiras do dispositivo, sem a conversão mundo/NDC. Cada pixel calculado é entregue a um `PlotadorPixel`, interface com o método `desenhar(int x, int y)`. Assim, o mesmo algoritmo serve tanto para desenhar na `Tela` quanto para guardar os pixels numa lista durante os testes.
+## 3. Rasterização de retas, circunferências e polígonos
+
+Pacote: `rasterizacao`. Os algoritmos são integrados à interface do módulo de transformações de coordenadas. O pacote não possui uma janela gráfica independente nem um ponto de entrada próprio; seus algoritmos podem ser utilizados pela aplicação principal e também são verificados por testes automáticos.
+
+Todos os algoritmos de rasterização trabalham em coordenadas inteiras do dispositivo, sem realizar a conversão mundo/NDC. Cada pixel calculado é entregue a um `PlotadorPixel`, interface com o método `desenhar(int x, int y)`. Assim, o mesmo algoritmo serve tanto para desenhar na `Tela` quanto para guardar os pixels numa lista durante os testes.
 
 ### Retas (aula G3)
 
 | Algoritmo | Classe | Ideia |
 | --- | --- | --- |
 | DDA (método do declive) | `DDA` | `passos = max(abs(dx), abs(dy))`; a cada passo soma `dx/passos` em x e `dy/passos` em y e arredonda. Usa ponto flutuante. |
-| Bresenham (ponto médio) | `Bresenham` | Só inteiros: `d = 2dy - dx`. Se `d <= 0`, escolhe E e soma `incE = 2dy`; senão, escolhe NE e soma `incNE = 2(dy - dx)`. |
+| Bresenham (ponto médio) | `Bresenham` | Utiliza apenas inteiros. Para o primeiro octante, inicia com `d = 2dy - dx`. Se `d <= 0`, escolhe E e soma `incE = 2dy`; senão, escolhe NE e soma `incNE = 2(dy - dx)`. |
 
 O Bresenham resolve o caso do 1º octante e cobre os outros sete por **simetria**: inverte o sentido de x e/ou de y (reflexão nos eixos) e troca x com y quando a reta é mais inclinada que 45° (reflexão em `y = x`). Os dois algoritmos incluem ambos os extremos.
 
-A classe `integracao/RenderizadorRetas` liga os dois algoritmos à `Tela` do módulo de transformações (`tela::drawPixel`). A classe `integracao/AdaptadoresRasterizacao` os adapta ao controller para que os cinco algoritmos possam ser escolhidos e usados pela interface.
+A classe `integracao/RenderizadorRetas` liga os dois algoritmos à `Tela` do módulo de transformações (`tela::drawPixel`). A classe `integracao/AdaptadoresRasterizacao` adapta os algoritmos ao contrato `AlgoritmoRasterizacao`, permitindo que DDA e Bresenham sejam escolhidos na interface.
 
 Exemplos dos slides, conferidos no teste:
 
@@ -216,13 +253,13 @@ Exemplos dos slides, conferidos no teste:
 | DDA | (6,9) → (11,12) | (6,9), (7,10), (8,10), (9,11), (10,11), (11,12) |
 | Bresenham | (20,10) → (30,18) | (20,10), (21,11), (22,12), (23,12), (24,13), (25,14), (26,15), (27,16), (28,16), (29,17), (30,18) |
 
-Teste automático:
+Testes automáticos:
 
 ```powershell
 java -cp out rasterizacao.teste.AlgoritmosRetaTeste
 ```
 
-Além dos exemplos, o teste cobre retas horizontais, verticais, invertidas e de um único pixel. Também percorre 1681 direções (`dx` e `dy` de -20 a 20) verificando extremos, quantidade de pixels, ausência de repetições e de interrupções, e confere a simetria do Bresenham nos 8 octantes.
+Além dos exemplos, o teste cobre retas horizontais, verticais, invertidas e de um único pixel. Também percorre 1681 direções (`dx` e `dy` de -20 a 20), verificando extremos, quantidade de pixels, ausência de repetições e de interrupções, e confere a simetria do Bresenham nos 8 octantes.
 
 ### Circunferências
 
@@ -267,7 +304,23 @@ Em `(7,7)` o oitante chega à diagonal e termina; a simetria completa a circunfe
 - **Centro**: quaisquer inteiros.
 - **Raio**: inteiro de 0 a 10 000 (`RAIO_MAXIMO`).
 
-O método `desenhar` retorna a quantidade de pixels ativados. A interface gráfica integrada usa os mesmos algoritmos por meio de `AdaptadoresRasterizacao` e do `TransformacoesController`.
+O método `desenhar` retorna a quantidade de pixels ativados. A interface gráfica integrada utiliza os mesmos algoritmos por meio de `AdaptadoresRasterizacao` e do `TransformacoesController`.
+
+#### Polígonos
+
+A classe `transformacoes.model.Poligono` representa um polígono por meio de uma lista ordenada de vértices cartesianos (`Ponto`). A lista deve conter pelo menos três vértices, e as coordenadas precisam ser finitas. A ordem dos vértices determina a sequência das arestas.
+
+A classe `rasterizacao.integracao.RasterizadorPoligono` realiza a rasterização do contorno:
+
+1. Recebe o polígono e uma função responsável por converter cada vértice de coordenadas do mundo para coordenadas de dispositivo.
+2. Percorre os vértices na ordem em que foram informados.
+3. Rasteriza cada aresta com `Bresenham`, que implementa o algoritmo do ponto médio para retas.
+4. Conecta também o último vértice ao primeiro, fechando o contorno.
+5. Evita adicionar mais de uma vez o mesmo pixel, inclusive nos encontros entre arestas.
+
+O rasterizador retorna uma lista de pixels, que é enviada à `Tela` pelo `TransformacoesController`. A interface desenha o contorno em verde (`#00FF00`).
+
+O rasterizador não preenche o interior do polígono: ele desenha somente suas arestas. A classe também não exige que o polígono esteja centralizado na origem; essa condição depende das coordenadas informadas.
 
 #### Testes
 
@@ -287,7 +340,13 @@ java -cp out rasterizacao.teste.AlgoritmosCircunferenciaTeste simetria
 java -cp out rasterizacao.teste.AlgoritmosCircunferenciaTeste controller
 ```
 
-Cada algoritmo é testado separadamente:
+Teste do rasterizador de polígonos:
+
+```powershell
+java -cp out rasterizacao.teste.RasterizadorPoligonoTeste
+```
+
+Cada algoritmo de circunferência é testado separadamente:
 
 - Sequência exata do exemplo `r = 10`, raio 1 e raio nulo.
 - Para todo raio de 0 a 200:
@@ -299,4 +358,6 @@ Cada algoritmo é testado separadamente:
 - Mudar o centro apenas desloca o desenho.
 - Entradas inválidas são recusadas.
 
-Se tudo estiver correto, cada teste imprime uma linha `OK: ...`, seguida de `Testes de circunferencia concluidos com sucesso.`
+Os testes de polígono verificam a rasterização de polígonos com diferentes quantidades de vértices, o fechamento do contorno, a conversão dos vértices para pixels e a ausência de pixels duplicados.
+
+Se tudo estiver correto, os testes imprimem mensagens `OK` e indicam a conclusão bem-sucedida.
