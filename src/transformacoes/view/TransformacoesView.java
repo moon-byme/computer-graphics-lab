@@ -26,13 +26,13 @@ public class TransformacoesView extends JFrame {
 
     /* Resolucoes pre-definidas do display: {largura, altura} e nome usual. */
     private static final int[][] RESOLUCOES = {
-        {320, 240}, {640, 480}, {800, 600}, {1024, 768},
-        {1280, 720}, {1366, 768}, {1920, 1080}
+            {320, 240}, {640, 480}, {800, 600}, {1024, 768},
+            {1280, 720}, {1366, 768}, {1920, 1080}
     };
     private static final String[] NOMES_RESOLUCOES = {
-        "QVGA", "VGA", "SVGA", "XGA", "HD", "WXGA", "Full HD"
+            "QVGA", "VGA", "SVGA", "XGA", "HD", "WXGA", "Full HD"
     };
-    private static final int RESOLUCAO_INICIAL = 1; 
+    private static final int RESOLUCAO_INICIAL = 1;
 
     static {
         UIManager.put("swing.boldMetal", Boolean.FALSE);
@@ -40,15 +40,15 @@ public class TransformacoesView extends JFrame {
 
     /* Janela do mundo, ponto e cenario NDC */
     private final JTextField xminCampo = new JTextField("-10", 5);
-    private final JTextField xmaxCampo = new JTextField("30", 5);
-    private final JTextField yminCampo = new JTextField("5", 5);
-    private final JTextField ymaxCampo = new JTextField("25", 5);
+    private final JTextField xmaxCampo = new JTextField("10", 5);
+    private final JTextField yminCampo = new JTextField("-10", 5);
+    private final JTextField ymaxCampo = new JTextField("10", 5);
     private final JTextField xCampo = new JTextField("10", 5);
     private final JTextField yCampo = new JTextField("15", 5);
     private final JLabel xRotulo = new JLabel("x");
     private final JLabel yRotulo = new JLabel("y");
     private final JComboBox<String> cenario = new JComboBox<>(new String[] {
-        "[0,1] x [0,1]", "[-1,1] x [-1,1]"
+            "[0,1] x [0,1]", "[-1,1] x [-1,1]"
     });
     private final JButton mostrar = new JButton("Desenhar");
     private final JButton limparTela = new JButton("Limpar tela");
@@ -60,6 +60,8 @@ public class TransformacoesView extends JFrame {
     private final JTextField y2Campo = new JTextField("20", 5);
     private final JLabel raioRotulo = new JLabel("Raio (px DC)");
     private final JTextField raioCampo = new JTextField("50", 5);
+    private final JLabel verticesRotulo = new JLabel("Vértices (x,y; ...)");
+    private final JTextField verticesCampo = new JTextField("-4,-3; 4,-3; 4,3; -4,3", 24);
 
     /* Display e escolha da resolucao. */
     private final Tela tela = new Tela();
@@ -138,6 +140,8 @@ public class TransformacoesView extends JFrame {
         terceiraLinha.add(y2Campo);
         terceiraLinha.add(raioRotulo);
         terceiraLinha.add(raioCampo);
+        terceiraLinha.add(verticesRotulo);
+        terceiraLinha.add(verticesCampo);
 
         JPanel camposDesenho = new JPanel(new GridLayout(0, 1));
         camposDesenho.setOpaque(false);
@@ -157,14 +161,21 @@ public class TransformacoesView extends JFrame {
     private void atualizarCamposForma(FormaRasterizacao.Tipo tipo) {
         boolean reta = tipo == FormaRasterizacao.Tipo.RETA;
         boolean circunferencia = tipo == FormaRasterizacao.Tipo.CIRCUNFERENCIA;
+        boolean poligono = tipo == FormaRasterizacao.Tipo.POLIGONO;
         xRotulo.setText(reta ? "Início x" : circunferencia ? "Centro x" : "Ponto x");
         yRotulo.setText(reta ? "Início y" : circunferencia ? "Centro y" : "Ponto y");
+        xRotulo.setVisible(!poligono);
+        xCampo.setVisible(!poligono);
+        yRotulo.setVisible(!poligono);
+        yCampo.setVisible(!poligono);
         x2Rotulo.setVisible(reta);
         x2Campo.setVisible(reta);
         y2Rotulo.setVisible(reta);
         y2Campo.setVisible(reta);
         raioRotulo.setVisible(circunferencia);
         raioCampo.setVisible(circunferencia);
+        verticesRotulo.setVisible(poligono);
+        verticesCampo.setVisible(poligono);
     }
 
     private static JPanel linhaDeCampos() {
@@ -447,7 +458,8 @@ public class TransformacoesView extends JFrame {
             }
         }
         algoritmos.setModel(modelo);
-        algoritmos.setEnabled(tipo != FormaRasterizacao.Tipo.PONTO);
+        algoritmos.setEnabled(tipo != FormaRasterizacao.Tipo.PONTO
+                && tipo != FormaRasterizacao.Tipo.POLIGONO);
     }
 
     /* Disparado ao escolher uma resolucao, ao clicar em Aplicar ou ao teclar Enter nos campos. */
@@ -481,6 +493,8 @@ public class TransformacoesView extends JFrame {
     public String getY2Texto() { return y2Campo.getText(); }
 
     public String getRaioTexto() { return raioCampo.getText(); }
+
+    public String getVerticesTexto() { return verticesCampo.getText(); }
 
     public FormaRasterizacao.Tipo getTipoFormaSelecionado() {
         return (FormaRasterizacao.Tipo) tipoForma.getSelectedItem();
@@ -552,13 +566,13 @@ public class TransformacoesView extends JFrame {
 
     public void limparResultados() {
         preencher(resultados, new String[][] {
-            {"Mundo", VAZIO, VAZIO}, {"NDC", VAZIO, VAZIO}, {"Dispositivo (DC)", VAZIO, VAZIO}
+                {"Mundo", VAZIO, VAZIO}, {"NDC", VAZIO, VAZIO}, {"Dispositivo (DC)", VAZIO, VAZIO}
         });
     }
 
     public void limparInversa() {
         preencher(inversa, new String[][] {
-            {"Clique (mouse)", VAZIO, VAZIO}, {"NDC", VAZIO, VAZIO}, {"Mundo", VAZIO, VAZIO}
+                {"Clique (mouse)", VAZIO, VAZIO}, {"NDC", VAZIO, VAZIO}, {"Mundo", VAZIO, VAZIO}
         });
     }
 
@@ -582,6 +596,6 @@ public class TransformacoesView extends JFrame {
 
     public void mostrarErro(String mensagem) {
         JOptionPane.showMessageDialog(this, mensagem, "Entrada inválida",
-                                      JOptionPane.ERROR_MESSAGE);
+                JOptionPane.ERROR_MESSAGE);
     }
 }

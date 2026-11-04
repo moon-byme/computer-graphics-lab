@@ -8,10 +8,13 @@ import java.util.Locale;
 import java.util.Map;
 import javax.swing.*;
 import rasterizacao.integracao.AdaptadoresRasterizacao;
+import rasterizacao.integracao.RasterizadorPoligono;
 import transformacoes.model.AlgoritmoRasterizacao;
 import transformacoes.model.FormaRasterizacao;
 import transformacoes.model.Pixel;
 import transformacoes.model.Ponto;
+import transformacoes.model.Poligono;
+import java.util.ArrayList;
 import transformacoes.model.TipoAlgoritmo;
 import transformacoes.model.TransformadorCoordenadas;
 import transformacoes.view.TransformacoesView;
@@ -71,7 +74,9 @@ public class TransformacoesController {
         view.setAlgoritmosParaForma(tipo);
         view.setStatus(tipo == FormaRasterizacao.Tipo.PONTO
                 ? "Ponto pronto para desenhar."
-                : "Forma selecionada. Informe os dados e escolha um algoritmo.", false);
+                : tipo == FormaRasterizacao.Tipo.POLIGONO
+                  ? "Informe os vértices; o contorno será rasterizado pelo algoritmo do ponto médio."
+                  : "Forma selecionada. Informe os dados e escolha um algoritmo.", false);
     }
 
     public void registrarAlgoritmo(AlgoritmoRasterizacao algoritmo) {
@@ -127,7 +132,7 @@ public class TransformacoesController {
     private static Pixel converterParaDc(double x, double y, double[] janela, int largura,
                                          int altura, boolean centrado) {
         Ponto ndc = TransformadorCoordenadas.userToNdc(x, y, janela[0], janela[1],
-                                                       janela[2], janela[3], centrado);
+                janela[2], janela[3], centrado);
         return TransformadorCoordenadas.ndcToDc(ndc.x, ndc.y, largura, altura, centrado);
     }
 
@@ -181,13 +186,13 @@ public class TransformacoesController {
             double[] mundo = lerJanela();
             boolean centrado = view.isCentrado();
             Ponto ndc = TransformadorCoordenadas.inpToNdc(dispositivo.x, dispositivo.y,
-                                                          largura, altura, centrado);
+                    largura, altura, centrado);
             Ponto ponto = TransformadorCoordenadas.ndcToUser(ndc.x, ndc.y, mundo[0], mundo[1],
-                                                             mundo[2], mundo[3], centrado);
+                    mundo[2], mundo[3], centrado);
             view.setResultadosInversa(new String[][] {
-                {"Clique (mouse)", String.valueOf(dispositivo.x), String.valueOf(dispositivo.y)},
-                {rotuloNdc(centrado), formatar(ndc.x), formatar(ndc.y)},
-                {"Mundo", formatar(ponto.x), formatar(ponto.y)}
+                    {"Clique (mouse)", String.valueOf(dispositivo.x), String.valueOf(dispositivo.y)},
+                    {rotuloNdc(centrado), formatar(ndc.x), formatar(ndc.y)},
+                    {"Mundo", formatar(ponto.x), formatar(ponto.y)}
             });
             view.setXTexto(formatar(ponto.x));
             view.setYTexto(formatar(ponto.y));
@@ -201,6 +206,10 @@ public class TransformacoesController {
     private void atualizar(boolean mostrarErro) {
         try {
             double[] janela = lerJanela();
+            if (view.getTipoFormaSelecionado() == FormaRasterizacao.Tipo.POLIGONO) {
+                desenharPoligono(janela);
+                return;
+            }
             double x = lerNumero(view.getXTexto());
             double y = lerNumero(view.getYTexto());
             int largura = view.getLarguraTela();
@@ -214,15 +223,15 @@ public class TransformacoesController {
             FormaRasterizacao.Tipo tipo = view.getTipoFormaSelecionado();
             if (tipo == FormaRasterizacao.Tipo.PONTO) {
                 Ponto ndc = TransformadorCoordenadas.userToNdc(x, y, janela[0], janela[1],
-                                                               janela[2], janela[3], centrado);
+                        janela[2], janela[3], centrado);
                 view.drawPixel(inicio.x, inicio.y);
                 view.setResultados(new String[][] {
-                    {"Mundo", formatar(x), formatar(y)},
-                    {rotuloNdc(centrado), formatar(ndc.x), formatar(ndc.y)},
-                    {"Dispositivo (DC)", String.valueOf(inicio.x), String.valueOf(inicio.y)}
+                        {"Mundo", formatar(x), formatar(y)},
+                        {rotuloNdc(centrado), formatar(ndc.x), formatar(ndc.y)},
+                        {"Dispositivo (DC)", String.valueOf(inicio.x), String.valueOf(inicio.y)}
                 });
                 view.setStatus(String.format("Pixel #00FF00 ativado em DC (%d, %d) num display de %d × %d.",
-                                             inicio.x, inicio.y, largura, altura), false);
+                        inicio.x, inicio.y, largura, altura), false);
                 return;
             }
             FormaRasterizacao forma;
@@ -236,12 +245,12 @@ public class TransformacoesController {
                 Pixel fim = converterParaDc(x2, y2, janela, largura, altura, centrado);
                 forma = FormaRasterizacao.reta(inicio, fim);
                 descricao = String.format("Reta DC (%d, %d) até (%d, %d)",
-                                          inicio.x, inicio.y, fim.x, fim.y);
+                        inicio.x, inicio.y, fim.x, fim.y);
             } else {
                 int raio = lerRaio(view.getRaioTexto());
                 forma = FormaRasterizacao.circunferencia(inicio, raio);
                 descricao = String.format("Circunferência DC centro (%d, %d), raio %d px",
-                                          inicio.x, inicio.y, raio);
+                        inicio.x, inicio.y, raio);
             }
             TipoAlgoritmo tipoAlgoritmo = view.getAlgoritmoSelecionado();
             if (tipoAlgoritmo == null) {
@@ -250,20 +259,20 @@ public class TransformacoesController {
             AlgoritmoRasterizacao algoritmo = algoritmos.get(tipoAlgoritmo);
             if (algoritmo == null) {
                 view.setResultados(new String[][] {
-                    {"Mundo (início/centro)", formatar(x), formatar(y)},
-                    {"Primitiva", tipo.toString(), "DC (" + inicio.x + ", " + inicio.y + ")"},
-                    {"Algoritmo", tipoAlgoritmo.toString(), "pendente"}
+                        {"Mundo (início/centro)", formatar(x), formatar(y)},
+                        {"Primitiva", tipo.toString(), "DC (" + inicio.x + ", " + inicio.y + ")"},
+                        {"Algoritmo", tipoAlgoritmo.toString(), "pendente"}
                 });
                 view.setStatus("O algoritmo selecionado ainda não foi registrado; nenhum pixel foi desenhado.",
-                               true);
+                        true);
                 return;
             }
             List<Pixel> pixels = algoritmo.rasterizar(forma);
             view.drawPixels(pixels);
             view.setResultados(new String[][] {
-                {"Mundo", formatar(x), formatar(y)},
-                {"Primitiva", tipo.toString(), descricao},
-                {"Pixels desenhados", String.valueOf(pixels.size()), "Algoritmo: " + tipoAlgoritmo}
+                    {"Mundo", formatar(x), formatar(y)},
+                    {"Primitiva", tipo.toString(), descricao},
+                    {"Pixels desenhados", String.valueOf(pixels.size()), "Algoritmo: " + tipoAlgoritmo}
             });
             view.setStatus(descricao + " desenhada com " + tipoAlgoritmo + ".", false);
         } catch (IllegalArgumentException erro) {
@@ -275,4 +284,46 @@ public class TransformacoesController {
             }
         }
     }
+    /** Lê os vértices cartesianos, converte-os para DC e rasteriza o contorno. */
+    private void desenharPoligono(double[] janela) {
+        Poligono poligono = lerPoligono(view.getVerticesTexto());
+        for (Ponto vertice : poligono.getVertices()) {
+            if (!dentroDaJanela(vertice.x, vertice.y, janela)) {
+                throw new IllegalArgumentException(String.format(
+                        "O vértice (%.4f, %.4f) está fora da janela do mundo.",
+                        vertice.x, vertice.y));
+            }
+        }
+        List<Pixel> pixels = RasterizadorPoligono.rasterizar(poligono, ponto ->
+                converterParaDc(ponto.x, ponto.y, janela, view.getLarguraTela(),
+                        view.getAlturaTela(), view.isCentrado()));
+        view.limparTela();
+        view.drawPixels(pixels);
+        view.setResultados(new String[][] {
+                {"Primitiva", "Polígono", poligono.getVertices().size() + " vértices"},
+                {"Rasterização", "Ponto médio", "Bresenham"},
+                {"Pixels desenhados", String.valueOf(pixels.size()), "Contorno fechado"}
+        });
+        view.setStatus("Polígono desenhado com o algoritmo do ponto médio (Bresenham).", false);
+    }
+
+    /** Formato aceito: x1,y1; x2,y2; x3,y3; ... */
+    private static Poligono lerPoligono(String texto) {
+        if (texto == null || texto.isBlank()) {
+            throw new IllegalArgumentException("Informe ao menos três vértices no formato x,y; x,y; x,y.");
+        }
+        String[] pares = texto.trim().split(";");
+        List<Ponto> vertices = new ArrayList<>();
+        for (int i = 0; i < pares.length; i++) {
+            String par = pares[i].trim();
+            String[] coordenadas = par.split(",");
+            if (coordenadas.length != 2) {
+                throw new IllegalArgumentException("Vértice " + (i + 1)
+                        + " inválido. Use o formato x,y e separe os vértices por ponto e vírgula.");
+            }
+            vertices.add(new Ponto(lerNumero(coordenadas[0]), lerNumero(coordenadas[1])));
+        }
+        return new Poligono(vertices);
+    }
+
 }

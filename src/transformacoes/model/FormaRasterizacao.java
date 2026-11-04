@@ -7,7 +7,8 @@ public final class FormaRasterizacao {
     public enum Tipo {
         PONTO("Ponto"),
         RETA("Reta"),
-        CIRCUNFERENCIA("Circunferência");
+        CIRCUNFERENCIA("Circunferência"),
+        POLIGONO("Polígono");
 
         private final String nome;
 
@@ -32,12 +33,12 @@ public final class FormaRasterizacao {
 
     public static FormaRasterizacao ponto(Pixel posicao) {
         return new FormaRasterizacao(Tipo.PONTO, null, null,
-                                     Objects.requireNonNull(posicao), 0);
+                Objects.requireNonNull(posicao), 0);
     }
 
     public static FormaRasterizacao reta(Pixel inicio, Pixel fim) {
         return new FormaRasterizacao(Tipo.RETA, Objects.requireNonNull(inicio),
-                                     Objects.requireNonNull(fim), null, 0);
+                Objects.requireNonNull(fim), null, 0);
     }
 
     public static FormaRasterizacao circunferencia(Pixel centro, int raio) {
@@ -45,7 +46,7 @@ public final class FormaRasterizacao {
             throw new IllegalArgumentException("O raio da circunferência não pode ser negativo.");
         }
         return new FormaRasterizacao(Tipo.CIRCUNFERENCIA, null, null,
-                                     Objects.requireNonNull(centro), raio);
+                Objects.requireNonNull(centro), raio);
     }
 
     public Tipo getTipo() { return tipo; }
