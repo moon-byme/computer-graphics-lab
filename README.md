@@ -54,25 +54,38 @@ src/
 │   └── teste/
 │       └── TabelaCoresTeste.java                # testes da paleta
 └── rasterizacao/                                # 3. Algoritmos de rasterização
-    ├── model/
-    │   ├── PlotadorPixel.java                   # destino de cada pixel calculado
-    │   ├── DDA.java                             # reta: método do declive
-    │   ├── Bresenham.java                      # reta: algoritmo do ponto médio
-    │   ├── CircunferenciaPolinomial.java
-    │   ├── CircunferenciaTrigonometrica.java
-    │   ├── CircunferenciaPontoMedio.java
-    │   ├── SimetriaCircunferencia.java          # simetria de 8 pontos
-    │   └── AlgoritmoCircunferencia.java         # enum com os três algoritmos
-    ├── controller/
-    │   └── CircunferenciaController.java        # validação e escolha do algoritmo
-    ├── integracao/
-    │   ├── AdaptadoresRasterizacao.java          # integra os cinco algoritmos de reta e circunferência
-    │   ├── RenderizadorRetas.java               # liga DDA/Bresenham diretamente à Tela
-    │   └── RasterizadorPoligono.java             # rasteriza as arestas do polígono com Bresenham
-    └── teste/
-        ├── AlgoritmosRetaTeste.java
-        ├── AlgoritmosCircunferenciaTeste.java
-        └── RasterizadorPoligonoTeste.java
+│   ├── model/
+│   │   ├── PlotadorPixel.java                   # destino de cada pixel calculado
+│   │   ├── DDA.java                             # reta: método do declive
+│   │   ├── Bresenham.java                      # reta: algoritmo do ponto médio
+│   │   ├── CircunferenciaPolinomial.java
+│   │   ├── CircunferenciaTrigonometrica.java
+│   │   ├── CircunferenciaPontoMedio.java
+│   │   ├── SimetriaCircunferencia.java          # simetria de 8 pontos
+│   │   └── AlgoritmoCircunferencia.java         # enum com os três algoritmos
+│   ├── controller/
+│   │   └── CircunferenciaController.java        # validação e escolha do algoritmo
+│   ├── integracao/
+│   │   ├── AdaptadoresRasterizacao.java          # integra os cinco algoritmos de reta e circunferência
+│   │   ├── RenderizadorRetas.java               # liga DDA/Bresenham diretamente à Tela
+│   │   └── RasterizadorPoligono.java             # rasteriza as arestas do polígono com Bresenham
+│   └── teste/
+│        ├── AlgoritmosRetaTeste.java
+│        ├── AlgoritmosCircunferenciaTeste.java
+│        └── RasterizadorPoligonoTeste.java 
+└── transformacoes2d/                         # 4. Transformações geométricas 2D (aula G5)
+│   ├── model/
+│   │   ├── PontoHomogeneo.java               # representação de pontos em coordenadas homogêneas
+│   │   ├── CoordenadasHomogeneas.java        # conversão entre coordenadas cartesianas e homogêneas
+│   │   ├── OperacoesMatriciais.java          # multiplicação de matrizes e pontos homogêneos
+│   │   └── MatrizesTransformacao.java        # matrizes das transformações geométricas
+│   └── teste/
+│        ├── MatrizesTransformacaoTeste.java   # testes das matrizes e transformações
+│        ├── OperacoesMatriciaisTeste.java     # testes de multiplicação de matrizes 
+│        └── TesteVisualTransformacoes.java    # demonstração gráfica das transformações
+└──
+
+  
 ```
 
 - **Model**: dados e regras (transformações, paleta, primitivas e algoritmos de rasterização), sem dependência direta da interface gráfica.
@@ -361,3 +374,44 @@ Cada algoritmo de circunferência é testado separadamente:
 Os testes de polígono verificam a rasterização de polígonos com diferentes quantidades de vértices, o fechamento do contorno, a conversão dos vértices para pixels e a ausência de pixels duplicados.
 
 Se tudo estiver correto, os testes imprimem mensagens `OK` e indicam a conclusão bem-sucedida.
+
+## 4. Transformações geométricas 2D (aula G5)
+
+Pacote: `transformacoes2d`.
+
+Implementação de transformações geométricas 2D utilizando coordenadas homogêneas e matrizes 3×3, seguindo a convenção de vetores coluna:
+
+`P' = M · P`
+
+### Coordenadas e operações matriciais
+
+As classes `PontoHomogeneo` e `CoordenadasHomogeneas` representam pontos homogêneos e realizam conversões e normalizações. A classe `OperacoesMatriciais` implementa multiplicações entre matrizes e pontos homogêneos.
+
+### Matrizes de transformação
+
+A classe `MatrizesTransformacao` implementa:
+
+- **Translação:** deslocamento nos eixos X e Y.
+- **Escala:** alteração das dimensões.
+- **Rotação:** em torno da origem, com ângulo em graus.
+- **Reflexões:** nos eixos X, Y, na origem e na reta Y = X.
+- **Cisalhamento:** nos eixos X e Y.
+
+### Testes automáticos
+
+Verificam as operações matriciais, os valores das matrizes e a aplicação das transformações aos pontos, incluindo rotações e entradas inválidas.
+
+```powershell
+java -cp out transformacoes2d.teste.OperacoesMatriciaisTeste
+java -cp out transformacoes2d.teste.MatrizesTransformacaoTeste
+```
+
+### Demonstração visual
+
+A classe `TesteVisualTransformacoes` utiliza Swing para comparar visualmente a figura original e sua versão transformada.
+
+```powershell
+java -cp out transformacoes2d.teste.TesteVisualTransformacoes
+```
+
+A demonstração é independente da interface principal de rasterização.
