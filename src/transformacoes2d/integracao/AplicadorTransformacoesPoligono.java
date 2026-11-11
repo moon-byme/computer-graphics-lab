@@ -76,6 +76,26 @@ public final class AplicadorTransformacoesPoligono {
         aplicarTransformacao(MatrizesTransformacao.rotacao(angulo));
     }
 
+    /** Escala os vértices originais em torno do ponto fixo e redesenha o polígono. */
+    public void escalarEmPontoFixo(double xf, double yf, double sx, double sy) {
+        exigirInicializado();
+        double[][] matrizResultante = comporTransformacoes(
+                MatrizesTransformacao.translacao(-xf, -yf),
+                MatrizesTransformacao.escala(sx, sy),
+                MatrizesTransformacao.translacao(xf, yf));
+        aplicarMatrizComposta(matrizResultante);
+    }
+
+    /** Rotaciona os vértices originais em torno do ponto fixo e redesenha o polígono. */
+    public void rotacionarEmPontoFixo(double xf, double yf, double angulo) {
+        exigirInicializado();
+        double[][] matrizResultante = comporTransformacoes(
+                MatrizesTransformacao.translacao(-xf, -yf),
+                MatrizesTransformacao.rotacao(angulo),
+                MatrizesTransformacao.translacao(xf, yf));
+        aplicarMatrizComposta(matrizResultante);
+    }
+
     /** Reflete os vértices originais em relação ao eixo X e redesenha o polígono. */
     public void aplicarReflexaoX() {
         exigirInicializado();

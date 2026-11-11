@@ -187,6 +187,28 @@ public final class AplicadorTransformacoesPoligonoTeste {
         exigir((tela.getImagem().getRGB(3, 1) & 0xFFFFFF) == Tela.COR_PIXEL,
                 "A matriz composta deve redesenhar o polígono transformado.");
 
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(4, 4), new Ponto(8, 4), new Ponto(4, 8))));
+        aplicador.escalarEmPontoFixo(4, 4, 2, 3);
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(4, 4, 1),
+                new PontoHomogeneo(12, 4, 1),
+                new PontoHomogeneo(4, 16, 1))),
+                "A escala em ponto fixo deve manter o centro e escalar em relação a ele.");
+        exigir((tela.getImagem().getRGB(6, 4) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "A escala em ponto fixo deve redesenhar o polígono.");
+
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(4, 4), new Ponto(8, 4), new Ponto(4, 8))));
+        aplicador.rotacionarEmPontoFixo(4, 4, 90);
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(4, 4, 1),
+                new PontoHomogeneo(4, 8, 1),
+                new PontoHomogeneo(0, 4, 1))),
+                "A rotação em ponto fixo deve manter o centro e girar em relação a ele.");
+        exigir((tela.getImagem().getRGB(4, 6) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "A rotação em ponto fixo deve redesenhar o polígono.");
+
         System.out.println("Todos os testes de integração do polígono passaram.");
     }
 
