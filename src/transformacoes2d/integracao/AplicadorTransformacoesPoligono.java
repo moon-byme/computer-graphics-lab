@@ -112,6 +112,28 @@ public final class AplicadorTransformacoesPoligono {
         aplicarTransformacao(MatrizesTransformacao.cisalhamentoY(fator));
     }
 
+    /**
+     * Compõe transformações na ordem em que devem ser aplicadas aos vértices.
+     * Para [M1, M2, ..., Mn], o resultado é Mn * ... * M2 * M1.
+     */
+    public double[][] comporTransformacoes(double[][]... matrizes) {
+        if (matrizes == null) {
+            throw new IllegalArgumentException("Informe as matrizes de transformação.");
+        }
+
+        double[][][] ordemDeMultiplicacao = new double[matrizes.length][][];
+        for (int indice = 0; indice < matrizes.length; indice++) {
+            ordemDeMultiplicacao[indice] = matrizes[matrizes.length - 1 - indice];
+        }
+        return OperacoesMatriciais.multiplicar(ordemDeMultiplicacao);
+    }
+
+    /** Aplica a matriz composta aos vértices originais e redesenha o polígono. */
+    public void aplicarMatrizComposta(double[][] matrizResultante) {
+        exigirInicializado();
+        aplicarTransformacao(matrizResultante);
+    }
+
     /** Retorna os vértices originais homogêneos, sem permitir alterações externas. */
     public List<PontoHomogeneo> getVerticesOriginais() {
         exigirInicializado();

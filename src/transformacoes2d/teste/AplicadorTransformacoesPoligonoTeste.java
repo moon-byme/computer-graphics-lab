@@ -7,6 +7,7 @@ import transformacoes.model.Poligono;
 import transformacoes.model.Ponto;
 import transformacoes.view.Tela;
 import transformacoes2d.integracao.AplicadorTransformacoesPoligono;
+import transformacoes2d.model.MatrizesTransformacao;
 import transformacoes2d.model.PontoHomogeneo;
 
 /** Testes de integração entre o polígono homogêneo, rasterizador e tela. */
@@ -24,6 +25,13 @@ public final class AplicadorTransformacoesPoligonoTeste {
         esperarExcecao(IllegalStateException.class,
                 () -> aplicador.transladarPoligono(1, 1),
                 "Não deve transformar o polígono antes de inicializá-lo.");
+        esperarExcecao(IllegalStateException.class,
+                () -> aplicador.aplicarMatrizComposta(
+                        MatrizesTransformacao.escala(1, 1)),
+                "Não deve aplicar uma matriz composta antes de inicializar o polígono.");
+        esperarExcecao(IllegalArgumentException.class,
+                () -> aplicador.comporTransformacoes(),
+                "Não deve compor uma sequência vazia de matrizes.");
 
         List<Ponto> verticesRecebidos = new ArrayList<>(List.of(
                 new Ponto(2, 2), new Ponto(8, 2), new Ponto(2, 8)));
@@ -160,7 +168,43 @@ public final class AplicadorTransformacoesPoligonoTeste {
         exigir((tela.getImagem().getRGB(2, 6) & 0xFFFFFF) == Tela.COR_PIXEL,
                 "O cisalhamento em Y deve redesenhar o polígono.");
 
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(2, 2), new Ponto(8, 2), new Ponto(2, 8))));
+        double[][] matrizComposta = aplicador.comporTransformacoes(
+                MatrizesTransformacao.translacao(2, 0),
+                MatrizesTransformacao.escala(0.5, 0.5));
+        exigir(mesmaMatriz(matrizComposta, new double[][] {
+            {0.5, 0, 1},
+            {0, 0.5, 0},
+            {0, 0, 1}
+        }), "A composição deve multiplicar na ordem inversa à aplicação.");
+        aplicador.aplicarMatrizComposta(matrizComposta);
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(2, 1, 1),
+                new PontoHomogeneo(5, 1, 1),
+                new PontoHomogeneo(2, 4, 1))),
+                "A matriz composta deve transformar os vértices originais.");
+        exigir((tela.getImagem().getRGB(3, 1) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "A matriz composta deve redesenhar o polígono transformado.");
+
         System.out.println("Todos os testes de integração do polígono passaram.");
+    }
+
+    private static boolean mesmaMatriz(double[][] atual, double[][] esperada) {
+        if (atual.length != esperada.length) {
+            return false;
+        }
+        for (int linha = 0; linha < atual.length; linha++) {
+            if (atual[linha].length != esperada[linha].length) {
+                return false;
+            }
+            for (int coluna = 0; coluna < atual[linha].length; coluna++) {
+                if (Math.abs(atual[linha][coluna] - esperada[linha][coluna]) > 1e-9) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static void exigir(boolean condicao, String mensagem) {
