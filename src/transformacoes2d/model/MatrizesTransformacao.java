@@ -83,6 +83,11 @@ public final class MatrizesTransformacao {
         };
     }
 
+    /** Alias de {@link #reflexaoEixoX()} para integração com a Pessoa 4. */
+    public static double[][] reflexaoX() {
+        return reflexaoEixoX();
+    }
+
     /**
      * Reflexão em relação ao eixo Y.
      */
@@ -92,6 +97,11 @@ public final class MatrizesTransformacao {
             {0, 1, 0},
             {0, 0, 1}
         };
+    }
+
+    /** Alias de {@link #reflexaoEixoY()} para integração com a Pessoa 4. */
+    public static double[][] reflexaoY() {
+        return reflexaoEixoY();
     }
 
     /**
@@ -114,6 +124,11 @@ public final class MatrizesTransformacao {
             {1, 0, 0},
             {0, 0, 1}
         };
+    }
+
+    /** Alias de {@link #reflexaoRetaYX()} para integração com a Pessoa 4. */
+    public static double[][] reflexaoRetaXY() {
+        return reflexaoRetaYX();
     }
 
     /**

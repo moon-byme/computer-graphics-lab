@@ -76,6 +76,42 @@ public final class AplicadorTransformacoesPoligono {
         aplicarTransformacao(MatrizesTransformacao.rotacao(angulo));
     }
 
+    /** Reflete os vértices originais em relação ao eixo X e redesenha o polígono. */
+    public void aplicarReflexaoX() {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.reflexaoX());
+    }
+
+    /** Reflete os vértices originais em relação ao eixo Y e redesenha o polígono. */
+    public void aplicarReflexaoY() {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.reflexaoY());
+    }
+
+    /** Reflete os vértices originais em relação à origem e redesenha o polígono. */
+    public void aplicarReflexaoOrigem() {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.reflexaoOrigem());
+    }
+
+    /** Reflete os vértices originais em relação à reta Y = X e redesenha o polígono. */
+    public void aplicarReflexaoRetaXY() {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.reflexaoRetaXY());
+    }
+
+    /** Cisalha os vértices originais no eixo X e redesenha o polígono. */
+    public void aplicarCisalhamentoX(double fator) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.cisalhamentoX(fator));
+    }
+
+    /** Cisalha os vértices originais no eixo Y e redesenha o polígono. */
+    public void aplicarCisalhamentoY(double fator) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.cisalhamentoY(fator));
+    }
+
     /** Retorna os vértices originais homogêneos, sem permitir alterações externas. */
     public List<PontoHomogeneo> getVerticesOriginais() {
         exigirInicializado();

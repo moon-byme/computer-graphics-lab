@@ -94,6 +94,72 @@ public final class AplicadorTransformacoesPoligonoTeste {
         exigir((tela.getImagem().getRGB(2, 1) & 0xFFFFFF) == Tela.COR_FUNDO,
                 "A rotação deve redesenhar a tela com a nova posição do polígono.");
 
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(2, -2), new Ponto(8, -2), new Ponto(2, -8))));
+        aplicador.aplicarReflexaoX();
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(2, 2, 1),
+                new PontoHomogeneo(8, 2, 1),
+                new PontoHomogeneo(2, 8, 1))),
+                "A reflexão em X deve ser aplicada aos vértices originais.");
+        exigir((tela.getImagem().getRGB(4, 2) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "A reflexão em X deve redesenhar o polígono.");
+
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(-2, 2), new Ponto(-8, 2), new Ponto(-2, 8))));
+        aplicador.aplicarReflexaoY();
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(2, 2, 1),
+                new PontoHomogeneo(8, 2, 1),
+                new PontoHomogeneo(2, 8, 1))),
+                "A reflexão em Y deve ser aplicada aos vértices originais.");
+        exigir((tela.getImagem().getRGB(4, 2) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "A reflexão em Y deve redesenhar o polígono.");
+
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(-2, -2), new Ponto(-8, -2), new Ponto(-2, -8))));
+        aplicador.aplicarReflexaoOrigem();
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(2, 2, 1),
+                new PontoHomogeneo(8, 2, 1),
+                new PontoHomogeneo(2, 8, 1))),
+                "A reflexão na origem deve ser aplicada aos vértices originais.");
+        exigir((tela.getImagem().getRGB(4, 2) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "A reflexão na origem deve redesenhar o polígono.");
+
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(2, 8), new Ponto(2, 2), new Ponto(8, 2))));
+        aplicador.aplicarReflexaoRetaXY();
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(8, 2, 1),
+                new PontoHomogeneo(2, 2, 1),
+                new PontoHomogeneo(2, 8, 1))),
+                "A reflexão na reta Y = X deve ser aplicada aos vértices originais.");
+        exigir((tela.getImagem().getRGB(4, 2) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "A reflexão na reta Y = X deve redesenhar o polígono.");
+
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(2, 2), new Ponto(8, 2), new Ponto(2, 8))));
+        aplicador.aplicarCisalhamentoX(1);
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(4, 2, 1),
+                new PontoHomogeneo(10, 2, 1),
+                new PontoHomogeneo(10, 8, 1))),
+                "O cisalhamento em X deve ser aplicado aos vértices originais.");
+        exigir((tela.getImagem().getRGB(6, 2) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "O cisalhamento em X deve redesenhar o polígono.");
+
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(2, 2), new Ponto(8, 2), new Ponto(2, 8))));
+        aplicador.aplicarCisalhamentoY(1);
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(2, 4, 1),
+                new PontoHomogeneo(8, 10, 1),
+                new PontoHomogeneo(2, 10, 1))),
+                "O cisalhamento em Y deve ser aplicado aos vértices originais.");
+        exigir((tela.getImagem().getRGB(2, 6) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "O cisalhamento em Y deve redesenhar o polígono.");
+
         System.out.println("Todos os testes de integração do polígono passaram.");
     }
 
