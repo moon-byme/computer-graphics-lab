@@ -10,6 +10,8 @@ import transformacoes.model.Poligono;
 import transformacoes.model.Ponto;
 import transformacoes.view.Tela;
 import transformacoes2d.model.CoordenadasHomogeneas;
+import transformacoes2d.model.MatrizesTransformacao;
+import transformacoes2d.model.OperacoesMatriciais;
 import transformacoes2d.model.PontoHomogeneo;
 
 /** Integra o polígono homogêneo à rasterização e à tela existentes. */
@@ -56,6 +58,24 @@ public final class AplicadorTransformacoesPoligono {
         tela.drawPixels(pixels);
     }
 
+    /** Translada os vértices originais e redesenha o polígono. */
+    public void transladarPoligono(double tx, double ty) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.translacao(tx, ty));
+    }
+
+    /** Escala os vértices originais e redesenha o polígono. */
+    public void escalarPoligono(double sx, double sy) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.escala(sx, sy));
+    }
+
+    /** Rotaciona os vértices originais e redesenha o polígono. */
+    public void rotacionarPoligono(double angulo) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.rotacao(angulo));
+    }
+
     /** Retorna os vértices originais homogêneos, sem permitir alterações externas. */
     public List<PontoHomogeneo> getVerticesOriginais() {
         exigirInicializado();
@@ -66,6 +86,19 @@ public final class AplicadorTransformacoesPoligono {
     public List<PontoHomogeneo> getVerticesAtuais() {
         exigirInicializado();
         return verticesAtuais;
+    }
+
+    private void aplicarTransformacao(double[][] matriz) {
+        exigirInicializado();
+
+        List<PontoHomogeneo> verticesTransformados =
+                new ArrayList<>(verticesOriginais.size());
+        for (PontoHomogeneo ponto : verticesOriginais) {
+            verticesTransformados.add(
+                    OperacoesMatriciais.multiplicarMatrizPorPonto(matriz, ponto));
+        }
+        verticesAtuais = List.copyOf(verticesTransformados);
+        atualizarExibicao();
     }
 
     private void exigirInicializado() {

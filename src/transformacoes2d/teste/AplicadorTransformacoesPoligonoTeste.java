@@ -21,6 +21,9 @@ public final class AplicadorTransformacoesPoligonoTeste {
 
         esperarExcecao(IllegalStateException.class, aplicador::atualizarExibicao,
                 "Não deve atualizar a tela antes de inicializar o polígono.");
+        esperarExcecao(IllegalStateException.class,
+                () -> aplicador.transladarPoligono(1, 1),
+                "Não deve transformar o polígono antes de inicializá-lo.");
 
         List<Ponto> verticesRecebidos = new ArrayList<>(List.of(
                 new Ponto(2, 2), new Ponto(8, 2), new Ponto(2, 8)));
@@ -59,6 +62,38 @@ public final class AplicadorTransformacoesPoligonoTeste {
         exigir((tela.getImagem().getRGB(4, 10) & 0xFFFFFF) == Tela.COR_PIXEL,
                 "A atualização deve rasterizar o polígono recebido mais recentemente.");
 
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(2, 2), new Ponto(8, 2), new Ponto(2, 8))));
+
+        aplicador.transladarPoligono(2, 2);
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(4, 4, 1),
+                new PontoHomogeneo(10, 4, 1),
+                new PontoHomogeneo(4, 10, 1))),
+                "A translação deve ser aplicada aos vértices originais.");
+        exigir((tela.getImagem().getRGB(6, 4) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "A translação deve redesenhar o polígono na nova posição.");
+        exigir((tela.getImagem().getRGB(4, 2) & 0xFFFFFF) == Tela.COR_FUNDO,
+                "A translação deve remover a posição anterior do polígono.");
+
+        aplicador.escalarPoligono(0.5, 0.5);
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(1, 1, 1),
+                new PontoHomogeneo(4, 1, 1),
+                new PontoHomogeneo(1, 4, 1))),
+                "A escala deve ser aplicada aos vértices originais.");
+        exigir((tela.getImagem().getRGB(2, 1) & 0xFFFFFF) == Tela.COR_PIXEL,
+                "A escala deve redesenhar o polígono na nova posição.");
+
+        aplicador.rotacionarPoligono(90);
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(-2, 2, 1),
+                new PontoHomogeneo(-2, 8, 1),
+                new PontoHomogeneo(-8, 2, 1))),
+                "A rotação deve ser aplicada aos vértices originais.");
+        exigir((tela.getImagem().getRGB(2, 1) & 0xFFFFFF) == Tela.COR_FUNDO,
+                "A rotação deve redesenhar a tela com a nova posição do polígono.");
+
         System.out.println("Todos os testes de integração do polígono passaram.");
     }
 
@@ -76,7 +111,9 @@ public final class AplicadorTransformacoesPoligonoTeste {
         for (int i = 0; i < atuais.size(); i++) {
             PontoHomogeneo atual = atuais.get(i);
             PontoHomogeneo esperado = esperados.get(i);
-            if (atual.x != esperado.x || atual.y != esperado.y || atual.w != esperado.w) {
+            if (Math.abs(atual.x - esperado.x) > 1e-9
+                    || Math.abs(atual.y - esperado.y) > 1e-9
+                    || Math.abs(atual.w - esperado.w) > 1e-9) {
                 return false;
             }
         }
