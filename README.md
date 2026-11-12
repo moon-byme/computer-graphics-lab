@@ -400,9 +400,17 @@ A classe `MatrizesTransformacao` implementa:
 - **Reflexões:** nos eixos X, Y, na origem e na reta Y = X.
 - **Cisalhamento:** nos eixos X e Y.
 
+### Aplicação ao polígono
+
+Na aplicação principal, selecione **Polígono** para exibir o painel **Transformações do polígono**. Os parâmetros de translação (`tx`, `ty`), escala (`sx`, `sy`), rotação (em graus) e cisalhamento (um fator) são informados nos campos do painel. Os botões de reflexão aplicam a transformação em relação ao eixo X, eixo Y, origem ou reta `Y = X`.
+
+As operações **Escalar no ponto** e **Girar no ponto** usam `(xf, yf)` como ponto fixo em coordenadas do mundo. Internamente, o polígono é deslocado para que esse ponto fique na origem, transformado e deslocado de volta. O botão **Compor** aplica, nessa ordem, translação, rotação e escala; como são usados vetores coluna, a matriz resultante é `Escala · Rotação · Translação`.
+
+Cada operação é aplicada aos vértices originais informados no campo do polígono, e não ao resultado da operação anterior. Para voltar a exibir o polígono sem transformação, clique em **Restaurar original**. Após transformar, os vértices são convertidos para coordenadas cartesianas e o contorno é redesenhado em verde por Bresenham (ponto médio); o interior não é preenchido.
+
 ### Testes automáticos
 
-Verificam as operações matriciais, os valores das matrizes e a aplicação das transformações aos pontos, incluindo rotações e entradas inválidas.
+Verificam as operações matriciais, os valores das matrizes e a aplicação das transformações aos pontos e polígonos, incluindo composição, operações em ponto fixo e entradas inválidas.
 
 ```powershell
 java -cp out transformacoes2d.teste.OperacoesMatriciaisTeste
@@ -412,7 +420,7 @@ java -cp out transformacoes2d.teste.AplicadorTransformacoesPoligonoTeste
 
 ### Demonstração visual
 
-A classe `AplicadorTransformacoesPoligono` mantém os vértices originais como base das operações, converte os vértices homogêneos atualizados para coordenadas cartesianas e redesenha o contorno no framebuffer verde pelo algoritmo de Bresenham (ponto médio). A interface Swing `TesteVisualTransformacoes` conecta campos e botões para translação, escala, rotação, reflexões, cisalhamentos, composição e operações em ponto fixo.
+A classe `AplicadorTransformacoesPoligono` integra as matrizes homogêneas à rasterização do polígono. A janela independente `TesteVisualTransformacoes` demonstra translação, escala, rotação, reflexões, cisalhamentos, composição e operações em ponto fixo sobre um retângulo de exemplo. Na aplicação principal, os mesmos recursos operam sobre os vértices informados pelo usuário.
 
 ```powershell
 java -cp out transformacoes2d.teste.TesteVisualTransformacoes
