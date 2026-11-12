@@ -43,9 +43,10 @@ public final class AplicadorTransformacoesPoligono {
     }
 
     /** Converte os vértices atuais e redesenha seu contorno verde pelo ponto médio. */
-    public void atualizarExibicao() {
+    public void atualizarDesenhoNaTela() {
         exigirInicializado();
 
+        tela.limpar();
         List<Ponto> verticesCartesianos = new ArrayList<>(verticesAtuais.size());
         for (PontoHomogeneo ponto : verticesAtuais) {
             verticesCartesianos.add(CoordenadasHomogeneas.paraCartesianas(ponto));
@@ -54,8 +55,12 @@ public final class AplicadorTransformacoesPoligono {
         Poligono poligono = new Poligono(verticesCartesianos);
         List<Pixel> pixels = RasterizadorPoligono.rasterizar(
                 poligono, conversorParaDispositivo);
-        tela.limpar();
         tela.drawPixels(pixels);
+    }
+
+    /** Alias mantido para compatibilidade com os chamadores existentes. */
+    public void atualizarExibicao() {
+        atualizarDesenhoNaTela();
     }
 
     /** Translada os vértices originais e redesenha o polígono. */
@@ -176,7 +181,7 @@ public final class AplicadorTransformacoesPoligono {
                     OperacoesMatriciais.multiplicarMatrizPorPonto(matriz, ponto));
         }
         verticesAtuais = List.copyOf(verticesTransformados);
-        atualizarExibicao();
+        atualizarDesenhoNaTela();
     }
 
     private void exigirInicializado() {

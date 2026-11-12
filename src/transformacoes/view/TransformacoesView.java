@@ -63,7 +63,31 @@ public class TransformacoesView extends JFrame {
     private final JLabel verticesRotulo = new JLabel("Vértices (x,y; ...)");
     private final JTextField verticesCampo = new JTextField("-4,-3; 4,-3; 4,3; -4,3", 24);
 
+    /* Transformações do polígono. */
+    private final JTextField translacaoXCampo = new JTextField("2", 4);
+    private final JTextField translacaoYCampo = new JTextField("2", 4);
+    private final JTextField escalaXCampo = new JTextField("1.5", 4);
+    private final JTextField escalaYCampo = new JTextField("1.5", 4);
+    private final JTextField rotacaoCampo = new JTextField("45", 4);
+    private final JTextField cisalhamentoCampo = new JTextField("0.5", 4);
+    private final JTextField pontoFixoXCampo = new JTextField("0", 4);
+    private final JTextField pontoFixoYCampo = new JTextField("0", 4);
+    private final JButton transladarPoligono = new JButton("Transladar");
+    private final JButton escalarPoligono = new JButton("Escalar");
+    private final JButton rotacionarPoligono = new JButton("Rotacionar");
+    private final JButton reflexaoX = new JButton("Eixo X");
+    private final JButton reflexaoY = new JButton("Eixo Y");
+    private final JButton reflexaoOrigem = new JButton("Origem");
+    private final JButton reflexaoRetaXY = new JButton("Reta Y = X");
+    private final JButton cisalhamentoX = new JButton("Cisalhar X");
+    private final JButton cisalhamentoY = new JButton("Cisalhar Y");
+    private final JButton escalarPontoFixo = new JButton("Escalar no ponto");
+    private final JButton rotacionarPontoFixo = new JButton("Girar no ponto");
+    private final JButton comporTransformacoes = new JButton("Compor");
+    private final JButton restaurarPoligono = new JButton("Restaurar original");
+
     /* Display e escolha da resolucao. */
+    private final JPanel painelTransformacoes = new JPanel(new BorderLayout(4, 4));
     private final Tela tela = new Tela();
     private final JPanel mesa = new JPanel(new GridBagLayout());
     private final JRadioButton[] opcoesResolucao = new JRadioButton[RESOLUCOES.length];
@@ -104,9 +128,11 @@ public class TransformacoesView extends JFrame {
         limparInversa();
 
         Rectangle limite = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-        setSize(Math.min(1200, limite.width), Math.min(780, limite.height));
-        setMinimumSize(new Dimension(900, 560));
+        pack();
+        setMinimumSize(new Dimension(
+                Math.min(900, limite.width), Math.min(560, limite.height)));
         setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
 
     /* ----- Montagem da janela ----- */
@@ -143,18 +169,25 @@ public class TransformacoesView extends JFrame {
         terceiraLinha.add(verticesRotulo);
         terceiraLinha.add(verticesCampo);
 
-        JPanel camposDesenho = new JPanel(new GridLayout(0, 1));
+        JPanel camposDesenho = new JPanel();
+        camposDesenho.setLayout(new BoxLayout(camposDesenho, BoxLayout.Y_AXIS));
         camposDesenho.setOpaque(false);
         camposDesenho.add(segundaLinha);
         camposDesenho.add(terceiraLinha);
+        painelTransformacoes.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Transformações do polígono"),
+                BorderFactory.createEmptyBorder(0, 4, 2, 4)));
+        painelTransformacoes.add(criarConteudoTransformacoes(), BorderLayout.CENTER);
+        camposDesenho.add(painelTransformacoes);
 
-        JPanel controles = new JPanel(new BorderLayout());
+        JPanel controles = new JPanel();
+        controles.setLayout(new BoxLayout(controles, BoxLayout.Y_AXIS));
         controles.setBackground(FUNDO_JANELA);
         controles.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, BORDA),
                 BorderFactory.createEmptyBorder(4, 6, 4, 6)));
-        controles.add(primeiraLinha, BorderLayout.NORTH);
-        controles.add(camposDesenho, BorderLayout.SOUTH);
+        controles.add(primeiraLinha);
+        controles.add(camposDesenho);
         return controles;
     }
 
@@ -162,6 +195,7 @@ public class TransformacoesView extends JFrame {
         boolean reta = tipo == FormaRasterizacao.Tipo.RETA;
         boolean circunferencia = tipo == FormaRasterizacao.Tipo.CIRCUNFERENCIA;
         boolean poligono = tipo == FormaRasterizacao.Tipo.POLIGONO;
+        painelTransformacoes.setVisible(poligono);
         xRotulo.setText(reta ? "Início x" : circunferencia ? "Centro x" : "Ponto x");
         yRotulo.setText(reta ? "Início y" : circunferencia ? "Centro y" : "Ponto y");
         xRotulo.setVisible(!poligono);
@@ -176,10 +210,12 @@ public class TransformacoesView extends JFrame {
         raioCampo.setVisible(circunferencia);
         verticesRotulo.setVisible(poligono);
         verticesCampo.setVisible(poligono);
+        revalidate();
+        repaint();
     }
 
     private static JPanel linhaDeCampos() {
-        JPanel linha = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+        JPanel linha = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 3));
         linha.setOpaque(false);
         return linha;
     }
@@ -206,7 +242,7 @@ public class TransformacoesView extends JFrame {
     private JScrollPane criarPainelLateral() {
         JPanel lateral = new JPanel(new GridBagLayout());
         lateral.setBackground(FUNDO_JANELA);
-        lateral.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        lateral.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
         GridBagConstraints c = new GridBagConstraints();
         c.gridx = 0;
@@ -230,6 +266,62 @@ public class TransformacoesView extends JFrame {
                 + rolagem.getVerticalScrollBar().getPreferredSize().width + 1;
         rolagem.setPreferredSize(new Dimension(largura, 0));
         return rolagem;
+    }
+
+    private JPanel criarConteudoTransformacoes() {
+        JPanel conteudo = new JPanel();
+        conteudo.setLayout(new BoxLayout(conteudo, BoxLayout.Y_AXIS));
+        conteudo.setOpaque(false);
+
+        JPanel linhaGeometria = linhaTransformacoes();
+        linhaGeometria.add(new JLabel("Translação"));
+        linhaGeometria.add(new JLabel("tx"));
+        linhaGeometria.add(translacaoXCampo);
+        linhaGeometria.add(new JLabel("ty"));
+        linhaGeometria.add(translacaoYCampo);
+        linhaGeometria.add(transladarPoligono);
+        linhaGeometria.add(new JLabel("Escala"));
+        linhaGeometria.add(new JLabel("sx"));
+        linhaGeometria.add(escalaXCampo);
+        linhaGeometria.add(new JLabel("sy"));
+        linhaGeometria.add(escalaYCampo);
+        linhaGeometria.add(escalarPoligono);
+        linhaGeometria.add(new JLabel("Ângulo (graus)"));
+        linhaGeometria.add(rotacaoCampo);
+        linhaGeometria.add(rotacionarPoligono);
+        conteudo.add(linhaGeometria);
+
+        JPanel linhaReflexoes = linhaTransformacoes();
+        linhaReflexoes.add(new JLabel("Reflexão"));
+        linhaReflexoes.add(reflexaoX);
+        linhaReflexoes.add(reflexaoY);
+        linhaReflexoes.add(reflexaoOrigem);
+        linhaReflexoes.add(reflexaoRetaXY);
+        linhaReflexoes.add(new JLabel("Cisalhamento"));
+        linhaReflexoes.add(new JLabel("Fator"));
+        linhaReflexoes.add(cisalhamentoCampo);
+        linhaReflexoes.add(cisalhamentoX);
+        linhaReflexoes.add(cisalhamentoY);
+        conteudo.add(linhaReflexoes);
+
+        JPanel linhaComposicao = linhaTransformacoes();
+        linhaComposicao.add(new JLabel("Ponto fixo"));
+        linhaComposicao.add(new JLabel("xf"));
+        linhaComposicao.add(pontoFixoXCampo);
+        linhaComposicao.add(new JLabel("yf"));
+        linhaComposicao.add(pontoFixoYCampo);
+        linhaComposicao.add(escalarPontoFixo);
+        linhaComposicao.add(rotacionarPontoFixo);
+        linhaComposicao.add(comporTransformacoes);
+        linhaComposicao.add(restaurarPoligono);
+        conteudo.add(linhaComposicao);
+        return conteudo;
+    }
+
+    private static JPanel linhaTransformacoes() {
+        JPanel linha = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 3));
+        linha.setOpaque(false);
+        return linha;
     }
 
     private JPanel criarConteudoResolucao() {
@@ -341,7 +433,7 @@ public class TransformacoesView extends JFrame {
         status.setBackground(new Color(0xE3E6EA));
         status.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(1, 0, 0, 0, BORDA),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+                BorderFactory.createEmptyBorder(4, 8, 4, 8)));
         return status;
     }
 
@@ -435,6 +527,22 @@ public class TransformacoesView extends JFrame {
         limparTela.addActionListener(listener);
     }
 
+    public void addTransformacaoPoligonoListener(ActionListener listener) {
+        transladarPoligono.addActionListener(listener);
+        escalarPoligono.addActionListener(listener);
+        rotacionarPoligono.addActionListener(listener);
+        reflexaoX.addActionListener(listener);
+        reflexaoY.addActionListener(listener);
+        reflexaoOrigem.addActionListener(listener);
+        reflexaoRetaXY.addActionListener(listener);
+        cisalhamentoX.addActionListener(listener);
+        cisalhamentoY.addActionListener(listener);
+        escalarPontoFixo.addActionListener(listener);
+        rotacionarPontoFixo.addActionListener(listener);
+        comporTransformacoes.addActionListener(listener);
+        restaurarPoligono.addActionListener(listener);
+    }
+
     public void addCenarioListener(ActionListener listener) { cenario.addActionListener(listener); }
 
     public void addVisualizacaoListener(ActionListener listener) {
@@ -495,6 +603,24 @@ public class TransformacoesView extends JFrame {
     public String getRaioTexto() { return raioCampo.getText(); }
 
     public String getVerticesTexto() { return verticesCampo.getText(); }
+
+    public String getTranslacaoXTexto() { return translacaoXCampo.getText(); }
+
+    public String getTranslacaoYTexto() { return translacaoYCampo.getText(); }
+
+    public String getEscalaXTexto() { return escalaXCampo.getText(); }
+
+    public String getEscalaYTexto() { return escalaYCampo.getText(); }
+
+    public String getRotacaoTexto() { return rotacaoCampo.getText(); }
+
+    public String getCisalhamentoTexto() { return cisalhamentoCampo.getText(); }
+
+    public String getPontoFixoXTexto() { return pontoFixoXCampo.getText(); }
+
+    public String getPontoFixoYTexto() { return pontoFixoYCampo.getText(); }
+
+    public Tela getTela() { return tela; }
 
     public FormaRasterizacao.Tipo getTipoFormaSelecionado() {
         return (FormaRasterizacao.Tipo) tipoForma.getSelectedItem();

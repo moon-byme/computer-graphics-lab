@@ -79,10 +79,13 @@ src/
 │   │   ├── CoordenadasHomogeneas.java        # conversão entre coordenadas cartesianas e homogêneas
 │   │   ├── OperacoesMatriciais.java          # multiplicação de matrizes e pontos homogêneos
 │   │   └── MatrizesTransformacao.java        # matrizes das transformações geométricas
+│   ├── integracao/
+│   │   └── AplicadorTransformacoesPoligono.java # transformações, conversão e rasterização do polígono
 │   └── teste/
+│        ├── AplicadorTransformacoesPoligonoTeste.java # testes da integração com rasterização e tela
 │        ├── MatrizesTransformacaoTeste.java   # testes das matrizes e transformações
 │        ├── OperacoesMatriciaisTeste.java     # testes de multiplicação de matrizes 
-│        └── TesteVisualTransformacoes.java    # demonstração gráfica das transformações
+│        └── TesteVisualTransformacoes.java    # interface gráfica integrada
 └──
 
   
@@ -139,7 +142,7 @@ Na interface:
 6. Clique em **Desenhar**. O display mostra os pixels calculados em verde (`#00FF00`). O painel **Resultados** exibe as informações da primitiva e a quantidade de pixels desenhados.
 7. Clique em **Limpar tela** para apagar os pixels e limpar os resultados sem alterar os valores informados nos campos.
 8. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
-
+9. Para transformar um polígono, mantenha **Polígono** selecionado e use o painel **Transformações do polígono**. Informe os parâmetros e clique na operação desejada. Translação, escala, rotação, reflexões, cisalhamentos, composição e operações em ponto fixo redesenham o polígono imediatamente. Cada operação começa dos vértices digitados; **Restaurar original** redesenha a forma sem transformação.
 **Entrada de polígonos:**
 
 Os vértices devem ser informados em coordenadas do mundo, separados por ponto e vírgula. As coordenadas de cada vértice devem ser separadas por vírgula.
@@ -404,14 +407,13 @@ Verificam as operações matriciais, os valores das matrizes e a aplicação das
 ```powershell
 java -cp out transformacoes2d.teste.OperacoesMatriciaisTeste
 java -cp out transformacoes2d.teste.MatrizesTransformacaoTeste
+java -cp out transformacoes2d.teste.AplicadorTransformacoesPoligonoTeste
 ```
 
 ### Demonstração visual
 
-A classe `TesteVisualTransformacoes` utiliza Swing para comparar visualmente a figura original e sua versão transformada.
+A classe `AplicadorTransformacoesPoligono` mantém os vértices originais como base das operações, converte os vértices homogêneos atualizados para coordenadas cartesianas e redesenha o contorno no framebuffer verde pelo algoritmo de Bresenham (ponto médio). A interface Swing `TesteVisualTransformacoes` conecta campos e botões para translação, escala, rotação, reflexões, cisalhamentos, composição e operações em ponto fixo.
 
 ```powershell
 java -cp out transformacoes2d.teste.TesteVisualTransformacoes
 ```
-
-A demonstração é independente da interface principal de rasterização.

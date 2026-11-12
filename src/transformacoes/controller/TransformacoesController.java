@@ -1,5 +1,6 @@
 package transformacoes.controller;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.EnumMap;
@@ -18,6 +19,8 @@ import java.util.ArrayList;
 import transformacoes.model.TipoAlgoritmo;
 import transformacoes.model.TransformadorCoordenadas;
 import transformacoes.view.TransformacoesView;
+import transformacoes2d.integracao.AplicadorTransformacoesPoligono;
+import transformacoes2d.model.MatrizesTransformacao;
 
 /** Liga a View ao Model: trata eventos, valida entradas e coordena as transformacoes */
 public class TransformacoesController {
@@ -26,17 +29,22 @@ public class TransformacoesController {
     private static final String VAZIO = "\u2014";
 
     private final TransformacoesView view;
+    private final AplicadorTransformacoesPoligono aplicadorPoligono;
     private final Map<TipoAlgoritmo, AlgoritmoRasterizacao> algoritmos =
             new EnumMap<>(TipoAlgoritmo.class);
 
     public TransformacoesController(TransformacoesView view) {
         this.view = view;
+        aplicadorPoligono = new AplicadorTransformacoesPoligono(view.getTela(), ponto ->
+                converterParaDc(ponto.x, ponto.y, lerJanela(), view.getLarguraTela(),
+                        view.getAlturaTela(), view.isCentrado()));
         for (AlgoritmoRasterizacao algoritmo : AdaptadoresRasterizacao.criar()) {
             registrarAlgoritmo(algoritmo);
         }
 
         view.addMostrarListener(e -> atualizar(true));
         view.addLimparTelaListener(e -> limparTela());
+        view.addTransformacaoPoligonoListener(this::transformarPoligono);
         view.addVisualizacaoListener(e -> aplicarVisualizacao());
         view.addAlgoritmoListener(e -> selecionarAlgoritmo());
         view.addFormaListener(e -> selecionarForma());
@@ -60,6 +68,84 @@ public class TransformacoesController {
         view.limparResultados();
         view.limparInversa();
         view.setStatus("Tela limpa.", false);
+    }
+
+    private void transformarPoligono(ActionEvent evento) {
+        if (view.getTipoFormaSelecionado() != FormaRasterizacao.Tipo.POLIGONO) {
+            view.setStatus("Selecione a primitiva Polígono antes de aplicar transformações.", true);
+            return;
+        }
+
+        try {
+            double[] janela = lerJanela();
+            Poligono poligonoOriginal = lerPoligono(view.getVerticesTexto());
+            for (Ponto vertice : poligonoOriginal.getVertices()) {
+                if (!dentroDaJanela(vertice.x, vertice.y, janela)) {
+                    throw new IllegalArgumentException(String.format(
+                            "O vértice (%.4f, %.4f) está fora da janela do mundo.",
+                            vertice.x, vertice.y));
+                }
+            }
+
+            aplicadorPoligono.inicializarPoligono(poligonoOriginal);
+            switch (evento.getActionCommand()) {
+                case "Transladar" ->
+                    aplicadorPoligono.transladarPoligono(
+                            lerNumero(view.getTranslacaoXTexto()),
+                            lerNumero(view.getTranslacaoYTexto()));
+                case "Escalar" ->
+                    aplicadorPoligono.escalarPoligono(
+                            lerNumero(view.getEscalaXTexto()),
+                            lerNumero(view.getEscalaYTexto()));
+                case "Rotacionar" ->
+                    aplicadorPoligono.rotacionarPoligono(
+                            lerNumero(view.getRotacaoTexto()));
+                case "Eixo X" -> aplicadorPoligono.aplicarReflexaoX();
+                case "Eixo Y" -> aplicadorPoligono.aplicarReflexaoY();
+                case "Origem" -> aplicadorPoligono.aplicarReflexaoOrigem();
+                case "Reta Y = X" -> aplicadorPoligono.aplicarReflexaoRetaXY();
+                case "Cisalhar X" ->
+                    aplicadorPoligono.aplicarCisalhamentoX(
+                            lerNumero(view.getCisalhamentoTexto()));
+                case "Cisalhar Y" ->
+                    aplicadorPoligono.aplicarCisalhamentoY(
+                            lerNumero(view.getCisalhamentoTexto()));
+                case "Escalar no ponto" ->
+                    aplicadorPoligono.escalarEmPontoFixo(
+                            lerNumero(view.getPontoFixoXTexto()),
+                            lerNumero(view.getPontoFixoYTexto()),
+                            lerNumero(view.getEscalaXTexto()),
+                            lerNumero(view.getEscalaYTexto()));
+                case "Girar no ponto" ->
+                    aplicadorPoligono.rotacionarEmPontoFixo(
+                            lerNumero(view.getPontoFixoXTexto()),
+                            lerNumero(view.getPontoFixoYTexto()),
+                            lerNumero(view.getRotacaoTexto()));
+                case "Compor" -> aplicadorPoligono.aplicarMatrizComposta(
+                        aplicadorPoligono.comporTransformacoes(
+                                MatrizesTransformacao.translacao(
+                                        lerNumero(view.getTranslacaoXTexto()),
+                                        lerNumero(view.getTranslacaoYTexto())),
+                                MatrizesTransformacao.rotacao(
+                                        lerNumero(view.getRotacaoTexto())),
+                                MatrizesTransformacao.escala(
+                                        lerNumero(view.getEscalaXTexto()),
+                                        lerNumero(view.getEscalaYTexto()))));
+                case "Restaurar original" -> aplicadorPoligono.atualizarDesenhoNaTela();
+                default -> throw new IllegalArgumentException(
+                        "A transformação selecionada não é reconhecida.");
+            }
+
+            view.setResultados(new String[][] {
+                    {"Primitiva", "Polígono", poligonoOriginal.getVertices().size() + " vértices"},
+                    {"Transformação", evento.getActionCommand(), "Base original"},
+                    {"Rasterização", "Ponto médio", "Bresenham"}
+            });
+            view.setStatus("Polígono atualizado: " + evento.getActionCommand() + ".", false);
+        } catch (IllegalArgumentException | IllegalStateException erro) {
+            view.setStatus("Não foi possível transformar o polígono: " + erro.getMessage(), true);
+            view.mostrarErro(erro.getMessage());
+        }
     }
 
     private void selecionarAlgoritmo() {

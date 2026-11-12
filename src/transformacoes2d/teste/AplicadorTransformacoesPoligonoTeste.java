@@ -20,7 +20,7 @@ public final class AplicadorTransformacoesPoligonoTeste {
         AplicadorTransformacoesPoligono aplicador = new AplicadorTransformacoesPoligono(
                 tela, ponto -> new Pixel((int) Math.round(ponto.x), (int) Math.round(ponto.y)));
 
-        esperarExcecao(IllegalStateException.class, aplicador::atualizarExibicao,
+        esperarExcecao(IllegalStateException.class, aplicador::atualizarDesenhoNaTela,
                 "Não deve atualizar a tela antes de inicializar o polígono.");
         esperarExcecao(IllegalStateException.class,
                 () -> aplicador.transladarPoligono(1, 1),
@@ -54,7 +54,7 @@ public final class AplicadorTransformacoesPoligonoTeste {
                 () -> aplicador.getVerticesAtuais().clear(),
                 "A lista atual não deve poder ser alterada externamente.");
 
-        aplicador.atualizarExibicao();
+        aplicador.atualizarDesenhoNaTela();
         exigir((tela.getImagem().getRGB(4, 2) & 0xFFFFFF) == Tela.COR_PIXEL,
                 "A aresta do polígono deve ser rasterizada em verde #00FF00.");
         exigir((tela.getImagem().getRGB(5, 5) & 0xFFFFFF) == Tela.COR_PIXEL,
