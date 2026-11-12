@@ -2,7 +2,12 @@ package transformacoes2d.teste;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.List;
 import javax.swing.*;
 import transformacoes.model.Pixel;
@@ -56,8 +61,8 @@ public class TesteVisualTransformacoes extends JPanel {
     }
 
     private JPanel criarPainelControles() {
-        JPanel controles = new JPanel(new GridLayout(0, 1, 4, 4));
-        controles.setBorder(BorderFactory.createEmptyBorder(6, 6, 0, 6));
+        JPanel controles = new JPanel(new GridBagLayout());
+        controles.setBorder(BorderFactory.createEmptyBorder(2, 2, 0, 2));
 
         JPanel linhaTranslacao = linha("Translação", rotuloCampo("tx", translacaoX),
                 rotuloCampo("ty", translacaoY));
@@ -118,15 +123,63 @@ public class TesteVisualTransformacoes extends JPanel {
             aplicador.atualizarDesenhoNaTela();
         });
         controles.add(linhaComposicao);
+        organizarGrupos(controles);
+        controles.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent evento) {
+                organizarGrupos(controles);
+            }
+        });
         return controles;
     }
 
-    private JPanel linha(String titulo, JComponent... componentes) {
-        JPanel linha = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-        linha.add(new JLabel(titulo + ":"));
-        for (JComponent componente : componentes) {
-            linha.add(componente);
+    private void organizarGrupos(JPanel controles) {
+        int larguraGrupo = 0;
+        for (java.awt.Component grupo : controles.getComponents()) {
+            larguraGrupo = Math.max(larguraGrupo, grupo.getPreferredSize().width);
         }
+        int largura = controles.getWidth() > 0
+                ? controles.getWidth() : tela.getPreferredSize().width;
+        int colunas = Math.max(1, Math.min(3, (largura - 4) / (larguraGrupo + 8)));
+        if (Integer.valueOf(colunas).equals(controles.getClientProperty("colunas"))) {
+            return;
+        }
+        controles.putClientProperty("colunas", colunas);
+
+        GridBagLayout layout = (GridBagLayout) controles.getLayout();
+        layout.columnWidths = new int[colunas];
+        java.util.Arrays.fill(layout.columnWidths, larguraGrupo + 8);
+        GridBagConstraints restricoes = new GridBagConstraints();
+        restricoes.fill = GridBagConstraints.BOTH;
+        restricoes.weightx = 1;
+        restricoes.insets = new Insets(4, 4, 4, 4);
+        for (int i = 0; i < controles.getComponentCount(); i++) {
+            restricoes.gridx = i % colunas;
+            restricoes.gridy = i / colunas;
+            restricoes.gridwidth = i == controles.getComponentCount() - 1
+                    ? colunas - restricoes.gridx : 1;
+            layout.setConstraints(controles.getComponent(i), restricoes);
+        }
+        controles.revalidate();
+        controles.repaint();
+    }
+
+    private JPanel linha(String titulo, JComponent... componentes) {
+        JPanel linha = new JPanel(new BorderLayout(6, 6));
+        linha.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder(titulo),
+                BorderFactory.createEmptyBorder(2, 4, 4, 4)));
+        JPanel campos = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 2));
+        for (JComponent componente : componentes) {
+            campos.add(componente);
+        }
+        if (componentes.length > 0) {
+            linha.add(campos, BorderLayout.CENTER);
+        }
+        JPanel botoes = new JPanel(componentes.length == 0
+                ? new GridLayout(0, 2, 6, 6)
+                : new FlowLayout(FlowLayout.CENTER, 6, 2));
+        linha.add(botoes, BorderLayout.SOUTH);
         return linha;
     }
 
@@ -140,7 +193,9 @@ public class TesteVisualTransformacoes extends JPanel {
     private void adicionarBotao(JPanel painel, String rotulo, Runnable acao) {
         JButton botao = new JButton(rotulo);
         botao.addActionListener(evento -> executar(acao));
-        painel.add(botao);
+        JPanel botoes = (JPanel) ((BorderLayout) painel.getLayout())
+                .getLayoutComponent(BorderLayout.SOUTH);
+        botoes.add(botao);
     }
 
     private void executar(Runnable acao) {
