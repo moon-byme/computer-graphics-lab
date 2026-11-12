@@ -1,5 +1,6 @@
 package transformacoes.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -24,5 +25,20 @@ public final class Poligono {
     /** Retorna os vértices na ordem informada, sem permitir alterações externas. */
     public List<Ponto> getVertices() {
         return vertices;
+    }
+
+    public Poligono centralizarNaOrigem() {
+        double centroX = 0;
+        double centroY = 0;
+        for (Ponto ponto : vertices) {
+            centroX += ponto.x / vertices.size();
+            centroY += ponto.y / vertices.size();
+        }
+
+        List<Ponto> verticesCentralizados = new ArrayList<>(vertices.size());
+        for (Ponto ponto : vertices) {
+            verticesCentralizados.add(new Ponto(ponto.x - centroX, ponto.y - centroY));
+        }
+        return new Poligono(verticesCentralizados);
     }
 }

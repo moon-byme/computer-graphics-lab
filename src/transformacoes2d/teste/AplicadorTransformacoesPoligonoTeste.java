@@ -33,6 +33,25 @@ public final class AplicadorTransformacoesPoligonoTeste {
                 () -> aplicador.comporTransformacoes(),
                 "Não deve compor uma sequência vazia de matrizes.");
 
+        Poligono poligonoCentralizado = new Poligono(List.of(
+                new Ponto(1, 2), new Ponto(7, 2), new Ponto(4, 8)))
+                .centralizarNaOrigem();
+        exigir(mesmosPontos(poligonoCentralizado.getVertices(), List.of(
+                new Ponto(-3, -2), new Ponto(3, -2), new Ponto(0, 4))),
+                "A centralização deve subtrair o centroide dos vértices sem alterar o formato.");
+        aplicador.inicializarPoligono(poligonoCentralizado);
+        exigir(mesmosVertices(aplicador.getVerticesOriginais(), List.of(
+                new PontoHomogeneo(-3, -2, 1),
+                new PontoHomogeneo(3, -2, 1),
+                new PontoHomogeneo(0, 4, 1))),
+                "O polígono centralizado deve ser a base original das transformações.");
+        aplicador.transladarPoligono(2, -1);
+        exigir(mesmosVertices(aplicador.getVerticesAtuais(), List.of(
+                new PontoHomogeneo(-1, -3, 1),
+                new PontoHomogeneo(5, -3, 1),
+                new PontoHomogeneo(2, 3, 1))),
+                "A translação deve continuar deslocando o polígono a partir da origem.");
+
         List<Ponto> verticesRecebidos = new ArrayList<>(List.of(
                 new Ponto(2, 2), new Ponto(8, 2), new Ponto(2, 8)));
         aplicador.inicializarPoligono(new Poligono(verticesRecebidos));
@@ -246,6 +265,19 @@ public final class AplicadorTransformacoesPoligonoTeste {
             if (Math.abs(atual.x - esperado.x) > 1e-9
                     || Math.abs(atual.y - esperado.y) > 1e-9
                     || Math.abs(atual.w - esperado.w) > 1e-9) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean mesmosPontos(List<Ponto> atuais, List<Ponto> esperados) {
+        if (atuais.size() != esperados.size()) {
+            return false;
+        }
+        for (int i = 0; i < atuais.size(); i++) {
+            if (Math.abs(atuais.get(i).x - esperados.get(i).x) > 1e-9
+                    || Math.abs(atuais.get(i).y - esperados.get(i).y) > 1e-9) {
                 return false;
             }
         }

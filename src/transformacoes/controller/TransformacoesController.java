@@ -78,7 +78,8 @@ public class TransformacoesController {
 
         try {
             double[] janela = lerJanela();
-            Poligono poligonoOriginal = lerPoligono(view.getVerticesTexto());
+            Poligono poligonoOriginal = lerPoligono(view.getVerticesTexto())
+                    .centralizarNaOrigem();
             for (Ponto vertice : poligonoOriginal.getVertices()) {
                 if (!dentroDaJanela(vertice.x, vertice.y, janela)) {
                     throw new IllegalArgumentException(String.format(
@@ -372,7 +373,7 @@ public class TransformacoesController {
     }
     /** Lê os vértices cartesianos, converte-os para DC e rasteriza o contorno. */
     private void desenharPoligono(double[] janela) {
-        Poligono poligono = lerPoligono(view.getVerticesTexto());
+        Poligono poligono = lerPoligono(view.getVerticesTexto()).centralizarNaOrigem();
         for (Ponto vertice : poligono.getVertices()) {
             if (!dentroDaJanela(vertice.x, vertice.y, janela)) {
                 throw new IllegalArgumentException(String.format(

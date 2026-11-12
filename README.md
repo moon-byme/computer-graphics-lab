@@ -142,7 +142,7 @@ Na interface:
 6. Clique em **Desenhar**. O display mostra os pixels calculados em verde (`#00FF00`). O painel **Resultados** exibe as informações da primitiva e a quantidade de pixels desenhados.
 7. Clique em **Limpar tela** para apagar os pixels e limpar os resultados sem alterar os valores informados nos campos.
 8. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
-9. Para transformar um polígono, mantenha **Polígono** selecionado e use o painel **Transformações do polígono**. Informe os parâmetros e clique na operação desejada. Translação, escala, rotação, reflexões, cisalhamentos, composição e operações em ponto fixo redesenham o polígono imediatamente. Cada operação começa dos vértices digitados; **Restaurar original** redesenha a forma sem transformação.
+9. Para transformar um polígono, mantenha **Polígono** selecionado e use o painel **Transformações do polígono**. Informe os parâmetros e clique na operação desejada. Translação, escala, rotação, reflexões, cisalhamentos, composição e operações em ponto fixo redesenham o polígono imediatamente. Cada operação começa dos vértices digitados após centralizá-los na origem; **Restaurar original** redesenha a forma centralizada sem transformação.
 **Entrada de polígonos:**
 
 Os vértices devem ser informados em coordenadas do mundo, separados por ponto e vírgula. As coordenadas de cada vértice devem ser separadas por vírgula.
@@ -153,11 +153,11 @@ Exemplo:
 -4,-3; 4,-3; 4,3; -4,3
 ```
 
-Esse exemplo representa um retângulo com quatro vértices, centralizado na origem `(0,0)`. O polígono pode ser regular ou irregular, desde que tenha pelo menos três vértices válidos e todos estejam dentro da janela do mundo definida na interface.
+O polígono pode ser regular ou irregular, desde que tenha pelo menos três vértices válidos. Ao desenhá-lo ou transformá-lo, o programa calcula o centroide dos vértices e o desloca automaticamente para a origem `(0,0)`, preservando seu formato. A janela do mundo deve conter os vértices após essa centralização.
 
 Os vértices são conectados na ordem informada, e o último é conectado ao primeiro para fechar o contorno. Cada aresta é rasterizada pelo algoritmo de Bresenham, correspondente ao algoritmo do ponto médio para retas estudado na aula G3. Pixels repetidos nas junções entre arestas são incluídos apenas uma vez na lista final.
 
-**Observação sobre a origem:** o polígono preenchido inicialmente na interface está centralizado na origem. Entretanto, o programa atualmente não verifica se um polígono personalizado está centralizado em `(0,0)`; ele apenas valida a quantidade e a validade dos vértices e se estão dentro da janela do mundo.
+**Observação sobre a origem:** as transformações geométricas começam no polígono centralizado. Uma transformação como translação pode deslocá-lo da origem; cada operação continua partindo da forma original centralizada.
 
 O framebuffer mantém a resolução original; os pixels são armazenados em verde. Use **Ampliação** (1×, 2×, 4× ou 8×) para inspecioná-los; **Grade** desenha limites entre pixels quando a ampliação é maior que 1×. Esses recursos afetam apenas a visualização, não alteram os pixels armazenados nem as coordenadas DC. Cliques na imagem ampliada são convertidos de volta às coordenadas do display original. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
 
