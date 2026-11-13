@@ -79,10 +79,13 @@ src/
 │   │   ├── CoordenadasHomogeneas.java        # conversão entre coordenadas cartesianas e homogêneas
 │   │   ├── OperacoesMatriciais.java          # multiplicação de matrizes e pontos homogêneos
 │   │   └── MatrizesTransformacao.java        # matrizes das transformações geométricas
+│   ├── integracao/
+│   │   └── AplicadorTransformacoesPoligono.java # transformações, conversão e rasterização do polígono
 │   └── teste/
+│        ├── AplicadorTransformacoesPoligonoTeste.java # testes da integração com rasterização e tela
 │        ├── MatrizesTransformacaoTeste.java   # testes das matrizes e transformações
 │        ├── OperacoesMatriciaisTeste.java     # testes de multiplicação de matrizes 
-│        └── TesteVisualTransformacoes.java    # demonstração gráfica das transformações
+│        └── TesteVisualTransformacoes.java    # interface gráfica integrada
 └──
 
   
@@ -139,7 +142,7 @@ Na interface:
 6. Clique em **Desenhar**. O display mostra os pixels calculados em verde (`#00FF00`). O painel **Resultados** exibe as informações da primitiva e a quantidade de pixels desenhados.
 7. Clique em **Limpar tela** para apagar os pixels e limpar os resultados sem alterar os valores informados nos campos.
 8. Opcionalmente, clique na área de desenho para experimentar a transformação inversa (dispositivo de entrada → NDC → mundo).
-
+9. Para transformar um polígono, mantenha **Polígono** selecionado e use o painel **Transformações do polígono**. Informe os parâmetros e clique na operação desejada. Translação, escala, rotação, reflexões, cisalhamentos, composição e operações em ponto fixo redesenham o polígono imediatamente. Cada operação começa dos vértices digitados após centralizá-los na origem; **Restaurar original** redesenha a forma centralizada sem transformação.
 **Entrada de polígonos:**
 
 Os vértices devem ser informados em coordenadas do mundo, separados por ponto e vírgula. As coordenadas de cada vértice devem ser separadas por vírgula.
@@ -150,11 +153,11 @@ Exemplo:
 -4,-3; 4,-3; 4,3; -4,3
 ```
 
-Esse exemplo representa um retângulo com quatro vértices, centralizado na origem `(0,0)`. O polígono pode ser regular ou irregular, desde que tenha pelo menos três vértices válidos e todos estejam dentro da janela do mundo definida na interface.
+O polígono pode ser regular ou irregular, desde que tenha pelo menos três vértices válidos. Ao desenhá-lo ou transformá-lo, o programa calcula o centroide dos vértices e o desloca automaticamente para a origem `(0,0)`, preservando seu formato. A janela do mundo deve conter os vértices após essa centralização.
 
 Os vértices são conectados na ordem informada, e o último é conectado ao primeiro para fechar o contorno. Cada aresta é rasterizada pelo algoritmo de Bresenham, correspondente ao algoritmo do ponto médio para retas estudado na aula G3. Pixels repetidos nas junções entre arestas são incluídos apenas uma vez na lista final.
 
-**Observação sobre a origem:** o polígono preenchido inicialmente na interface está centralizado na origem. Entretanto, o programa atualmente não verifica se um polígono personalizado está centralizado em `(0,0)`; ele apenas valida a quantidade e a validade dos vértices e se estão dentro da janela do mundo.
+**Observação sobre a origem:** as transformações geométricas começam no polígono centralizado. Uma transformação como translação pode deslocá-lo da origem; cada operação continua partindo da forma original centralizada.
 
 O framebuffer mantém a resolução original; os pixels são armazenados em verde. Use **Ampliação** (1×, 2×, 4× ou 8×) para inspecioná-los; **Grade** desenha limites entre pixels quando a ampliação é maior que 1×. Esses recursos afetam apenas a visualização, não alteram os pixels armazenados nem as coordenadas DC. Cliques na imagem ampliada são convertidos de volta às coordenadas do display original. As dimensões exibidas correspondem à **área de desenho** (não necessariamente à resolução total do monitor).
 
@@ -397,21 +400,28 @@ A classe `MatrizesTransformacao` implementa:
 - **Reflexões:** nos eixos X, Y, na origem e na reta Y = X.
 - **Cisalhamento:** nos eixos X e Y.
 
+### Aplicação ao polígono
+
+Na aplicação principal, selecione **Polígono** para exibir o painel **Transformações do polígono**. Os parâmetros de translação (`tx`, `ty`), escala (`sx`, `sy`), rotação (em graus) e cisalhamento (um fator) são informados nos campos do painel. Os botões de reflexão aplicam a transformação em relação ao eixo X, eixo Y, origem ou reta `Y = X`.
+
+As operações **Escalar no ponto** e **Girar no ponto** usam `(xf, yf)` como ponto fixo em coordenadas do mundo. Internamente, o polígono é deslocado para que esse ponto fique na origem, transformado e deslocado de volta. O botão **Compor** aplica, nessa ordem, translação, rotação e escala; como são usados vetores coluna, a matriz resultante é `Escala · Rotação · Translação`.
+
+Cada operação é aplicada aos vértices originais informados no campo do polígono, e não ao resultado da operação anterior. Para voltar a exibir o polígono sem transformação, clique em **Restaurar original**. Após transformar, os vértices são convertidos para coordenadas cartesianas e o contorno é redesenhado em verde por Bresenham (ponto médio); o interior não é preenchido.
+
 ### Testes automáticos
 
-Verificam as operações matriciais, os valores das matrizes e a aplicação das transformações aos pontos, incluindo rotações e entradas inválidas.
+Verificam as operações matriciais, os valores das matrizes e a aplicação das transformações aos pontos e polígonos, incluindo composição, operações em ponto fixo e entradas inválidas.
 
 ```powershell
 java -cp out transformacoes2d.teste.OperacoesMatriciaisTeste
 java -cp out transformacoes2d.teste.MatrizesTransformacaoTeste
+java -cp out transformacoes2d.teste.AplicadorTransformacoesPoligonoTeste
 ```
 
 ### Demonstração visual
 
-A classe `TesteVisualTransformacoes` utiliza Swing para comparar visualmente a figura original e sua versão transformada.
+A classe `AplicadorTransformacoesPoligono` integra as matrizes homogêneas à rasterização do polígono. A janela independente `TesteVisualTransformacoes` demonstra translação, escala, rotação, reflexões, cisalhamentos, composição e operações em ponto fixo sobre um retângulo de exemplo. Na aplicação principal, os mesmos recursos operam sobre os vértices informados pelo usuário.
 
 ```powershell
 java -cp out transformacoes2d.teste.TesteVisualTransformacoes
 ```
-
-A demonstração é independente da interface principal de rasterização.

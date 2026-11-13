@@ -1,0 +1,192 @@
+package transformacoes2d.integracao;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+import rasterizacao.integracao.RasterizadorPoligono;
+import transformacoes.model.Pixel;
+import transformacoes.model.Poligono;
+import transformacoes.model.Ponto;
+import transformacoes.view.Tela;
+import transformacoes2d.model.CoordenadasHomogeneas;
+import transformacoes2d.model.MatrizesTransformacao;
+import transformacoes2d.model.OperacoesMatriciais;
+import transformacoes2d.model.PontoHomogeneo;
+
+/** Integra o polígono homogêneo à rasterização e à tela existentes. */
+public final class AplicadorTransformacoesPoligono {
+    private final Tela tela;
+    private final Function<Ponto, Pixel> conversorParaDispositivo;
+    private List<PontoHomogeneo> verticesOriginais = List.of();
+    private List<PontoHomogeneo> verticesAtuais = List.of();
+    private boolean inicializado;
+
+    public AplicadorTransformacoesPoligono(
+            Tela tela, Function<Ponto, Pixel> conversorParaDispositivo) {
+        this.tela = Objects.requireNonNull(tela, "A tela é obrigatória.");
+        this.conversorParaDispositivo = Objects.requireNonNull(
+                conversorParaDispositivo, "O conversor para dispositivo é obrigatório.");
+    }
+
+    /** Armazena uma cópia homogênea como base imutável para as transformações. */
+    public void inicializarPoligono(Poligono poligonoOriginal) {
+        Objects.requireNonNull(poligonoOriginal, "O polígono original é obrigatório.");
+
+        List<PontoHomogeneo> vertices = new ArrayList<>(poligonoOriginal.getVertices().size());
+        for (Ponto ponto : poligonoOriginal.getVertices()) {
+            vertices.add(CoordenadasHomogeneas.paraHomogeneas(ponto.x, ponto.y));
+        }
+        verticesOriginais = List.copyOf(vertices);
+        verticesAtuais = List.copyOf(verticesOriginais);
+        inicializado = true;
+    }
+
+    /** Converte os vértices atuais e redesenha seu contorno verde pelo ponto médio. */
+    public void atualizarDesenhoNaTela() {
+        exigirInicializado();
+
+        tela.limpar();
+        List<Ponto> verticesCartesianos = new ArrayList<>(verticesAtuais.size());
+        for (PontoHomogeneo ponto : verticesAtuais) {
+            verticesCartesianos.add(CoordenadasHomogeneas.paraCartesianas(ponto));
+        }
+
+        Poligono poligono = new Poligono(verticesCartesianos);
+        List<Pixel> pixels = RasterizadorPoligono.rasterizar(
+                poligono, conversorParaDispositivo);
+        tela.drawPixels(pixels);
+    }
+
+    /** Alias mantido para compatibilidade com os chamadores existentes. */
+    public void atualizarExibicao() {
+        atualizarDesenhoNaTela();
+    }
+
+    /** Translada os vértices originais e redesenha o polígono. */
+    public void transladarPoligono(double tx, double ty) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.translacao(tx, ty));
+    }
+
+    /** Escala os vértices originais e redesenha o polígono. */
+    public void escalarPoligono(double sx, double sy) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.escala(sx, sy));
+    }
+
+    /** Rotaciona os vértices originais e redesenha o polígono. */
+    public void rotacionarPoligono(double angulo) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.rotacao(angulo));
+    }
+
+    /** Escala os vértices originais em torno do ponto fixo e redesenha o polígono. */
+    public void escalarEmPontoFixo(double xf, double yf, double sx, double sy) {
+        exigirInicializado();
+        double[][] matrizResultante = comporTransformacoes(
+                MatrizesTransformacao.translacao(-xf, -yf),
+                MatrizesTransformacao.escala(sx, sy),
+                MatrizesTransformacao.translacao(xf, yf));
+        aplicarMatrizComposta(matrizResultante);
+    }
+
+    /** Rotaciona os vértices originais em torno do ponto fixo e redesenha o polígono. */
+    public void rotacionarEmPontoFixo(double xf, double yf, double angulo) {
+        exigirInicializado();
+        double[][] matrizResultante = comporTransformacoes(
+                MatrizesTransformacao.translacao(-xf, -yf),
+                MatrizesTransformacao.rotacao(angulo),
+                MatrizesTransformacao.translacao(xf, yf));
+        aplicarMatrizComposta(matrizResultante);
+    }
+
+    /** Reflete os vértices originais em relação ao eixo X e redesenha o polígono. */
+    public void aplicarReflexaoX() {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.reflexaoX());
+    }
+
+    /** Reflete os vértices originais em relação ao eixo Y e redesenha o polígono. */
+    public void aplicarReflexaoY() {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.reflexaoY());
+    }
+
+    /** Reflete os vértices originais em relação à origem e redesenha o polígono. */
+    public void aplicarReflexaoOrigem() {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.reflexaoOrigem());
+    }
+
+    /** Reflete os vértices originais em relação à reta Y = X e redesenha o polígono. */
+    public void aplicarReflexaoRetaXY() {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.reflexaoRetaXY());
+    }
+
+    /** Cisalha os vértices originais no eixo X e redesenha o polígono. */
+    public void aplicarCisalhamentoX(double fator) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.cisalhamentoX(fator));
+    }
+
+    /** Cisalha os vértices originais no eixo Y e redesenha o polígono. */
+    public void aplicarCisalhamentoY(double fator) {
+        exigirInicializado();
+        aplicarTransformacao(MatrizesTransformacao.cisalhamentoY(fator));
+    }
+
+    /**
+     * Compõe transformações na ordem em que devem ser aplicadas aos vértices.
+     * Para [M1, M2, ..., Mn], o resultado é Mn * ... * M2 * M1.
+     */
+    public double[][] comporTransformacoes(double[][]... matrizes) {
+        if (matrizes == null) {
+            throw new IllegalArgumentException("Informe as matrizes de transformação.");
+        }
+
+        double[][][] ordemDeMultiplicacao = new double[matrizes.length][][];
+        for (int indice = 0; indice < matrizes.length; indice++) {
+            ordemDeMultiplicacao[indice] = matrizes[matrizes.length - 1 - indice];
+        }
+        return OperacoesMatriciais.multiplicar(ordemDeMultiplicacao);
+    }
+
+    /** Aplica a matriz composta aos vértices originais e redesenha o polígono. */
+    public void aplicarMatrizComposta(double[][] matrizResultante) {
+        exigirInicializado();
+        aplicarTransformacao(matrizResultante);
+    }
+
+    /** Retorna os vértices originais homogêneos, sem permitir alterações externas. */
+    public List<PontoHomogeneo> getVerticesOriginais() {
+        exigirInicializado();
+        return verticesOriginais;
+    }
+
+    /** Retorna os vértices atuais homogêneos, sem permitir alterações externas. */
+    public List<PontoHomogeneo> getVerticesAtuais() {
+        exigirInicializado();
+        return verticesAtuais;
+    }
+
+    private void aplicarTransformacao(double[][] matriz) {
+        exigirInicializado();
+
+        List<PontoHomogeneo> verticesTransformados =
+                new ArrayList<>(verticesOriginais.size());
+        for (PontoHomogeneo ponto : verticesOriginais) {
+            verticesTransformados.add(
+                    OperacoesMatriciais.multiplicarMatrizPorPonto(matriz, ponto));
+        }
+        verticesAtuais = List.copyOf(verticesTransformados);
+        atualizarDesenhoNaTela();
+    }
+
+    private void exigirInicializado() {
+        if (!inicializado) {
+            throw new IllegalStateException("Inicialize o polígono antes de usá-lo.");
+        }
+    }
+}

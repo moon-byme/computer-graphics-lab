@@ -1,223 +1,229 @@
-
 package transformacoes2d.teste;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.util.List;
 import javax.swing.*;
+import transformacoes.model.Pixel;
+import transformacoes.model.Poligono;
+import transformacoes.model.Ponto;
+import transformacoes.view.Tela;
+import transformacoes2d.integracao.AplicadorTransformacoesPoligono;
 import transformacoes2d.model.MatrizesTransformacao;
-import transformacoes2d.model.OperacoesMatriciais;
-import transformacoes2d.model.PontoHomogeneo;
 
-
+/** Interface de demonstração ligada ao integrador de transformações 2D. */
 public class TesteVisualTransformacoes extends JPanel {
-
+    private static final int LARGURA_TELA = 850;
+    private static final int ALTURA_TELA = 600;
     private static final int ESCALA_TELA = 2;
 
-    private final double[][] vertices = {
-        {-80, -50},
-        {80, -50},
-        {80, 50},
-        {-80, 50}
-    };
-
-    private double[][] matriz = {
-        {1, 0, 0},
-        {0, 1, 0},
-        {0, 0, 1}
-    };
+    private final Tela tela = new Tela();
+    private final JTextField translacaoX = new JTextField("100", 5);
+    private final JTextField translacaoY = new JTextField("50", 5);
+    private final JTextField escalaX = new JTextField("1.5", 5);
+    private final JTextField escalaY = new JTextField("0.7", 5);
+    private final JTextField angulo = new JTextField("45", 5);
+    private final JTextField cisalhamento = new JTextField("0.7", 5);
+    private final JTextField pontoFixoX = new JTextField("0", 5);
+    private final JTextField pontoFixoY = new JTextField("0", 5);
+    private final JLabel status = new JLabel("Polígono original pronto.");
+    private final AplicadorTransformacoesPoligono aplicador;
 
     public TesteVisualTransformacoes() {
-        setBackground(Color.WHITE);
-        setPreferredSize(new Dimension(850, 600));
+        super(new BorderLayout(8, 8));
+        tela.setResolucao(LARGURA_TELA, ALTURA_TELA);
+        aplicador = new AplicadorTransformacoesPoligono(tela, ponto ->
+                new Pixel(
+                        (int) Math.round(LARGURA_TELA / 2.0 + ponto.x * ESCALA_TELA),
+                        (int) Math.round(ALTURA_TELA / 2.0 - ponto.y * ESCALA_TELA)));
+        aplicador.inicializarPoligono(new Poligono(List.of(
+                new Ponto(-80, -50),
+                new Ponto(80, -50),
+                new Ponto(80, 50),
+                new Ponto(-80, 50))));
+
+        add(criarPainelControles(), BorderLayout.NORTH);
+        add(tela, BorderLayout.CENTER);
+        status.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
+        add(status, BorderLayout.SOUTH);
+        aplicador.atualizarDesenhoNaTela();
     }
 
-    public void aplicarTransformacao(double[][] novaMatriz) {
-        matriz = novaMatriz;
-        repaint();
+    /** Mantém um ponto de entrada simples para aplicar uma matriz composta externa. */
+    public void aplicarTransformacao(double[][] matriz) {
+        executar(() -> aplicador.aplicarMatrizComposta(matriz));
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+    private JPanel criarPainelControles() {
+        JPanel controles = new JPanel(new GridBagLayout());
+        controles.setBorder(BorderFactory.createEmptyBorder(2, 2, 0, 2));
 
-        Graphics2D g2 = (Graphics2D) g.create();
+        JPanel linhaTranslacao = linha("Translação", rotuloCampo("tx", translacaoX),
+                rotuloCampo("ty", translacaoY));
+        adicionarBotao(linhaTranslacao, "Aplicar", () ->
+                aplicador.transladarPoligono(numero(translacaoX), numero(translacaoY)));
+        controles.add(linhaTranslacao);
 
-        g2.setRenderingHint(
-            RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON
-        );
+        JPanel linhaEscala = linha("Escala", rotuloCampo("sx", escalaX),
+                rotuloCampo("sy", escalaY));
+        adicionarBotao(linhaEscala, "Aplicar", () ->
+                aplicador.escalarPoligono(numero(escalaX), numero(escalaY)));
+        controles.add(linhaEscala);
 
-        int centroX = getWidth() / 2;
-        int centroY = getHeight() / 2;
+        JPanel linhaRotacao = linha("Rotação (graus)", angulo);
+        adicionarBotao(linhaRotacao, "Aplicar", () ->
+                aplicador.rotacionarPoligono(numero(angulo)));
+        controles.add(linhaRotacao);
 
-        desenharEixos(g2, centroX, centroY);
+        JPanel linhaReflexoes = linha("Reflexões");
+        adicionarBotao(linhaReflexoes, "Eixo X", aplicador::aplicarReflexaoX);
+        adicionarBotao(linhaReflexoes, "Eixo Y", aplicador::aplicarReflexaoY);
+        adicionarBotao(linhaReflexoes, "Origem", aplicador::aplicarReflexaoOrigem);
+        adicionarBotao(linhaReflexoes, "Reta Y = X", aplicador::aplicarReflexaoRetaXY);
+        controles.add(linhaReflexoes);
 
-        // Polígono original em azul.
-        desenharPoligono(g2, vertices, centroX, centroY, Color.BLUE);
+        JPanel linhaCisalhamento = linha("Cisalhamento", cisalhamento);
+        adicionarBotao(linhaCisalhamento, "Eixo X", () ->
+                aplicador.aplicarCisalhamentoX(numero(cisalhamento)));
+        adicionarBotao(linhaCisalhamento, "Eixo Y", () ->
+                aplicador.aplicarCisalhamentoY(numero(cisalhamento)));
+        controles.add(linhaCisalhamento);
 
-        // Aplica a matriz aos vértices.
-        double[][] transformados = new double[vertices.length][2];
+        JPanel linhaPontoFixo = linha("Ponto fixo",
+                rotuloCampo("xf", pontoFixoX), rotuloCampo("yf", pontoFixoY));
+        adicionarBotao(linhaPontoFixo, "Escalar", () ->
+                aplicador.escalarEmPontoFixo(numero(pontoFixoX), numero(pontoFixoY),
+                        numero(escalaX), numero(escalaY)));
+        adicionarBotao(linhaPontoFixo, "Rotacionar", () ->
+                aplicador.rotacionarEmPontoFixo(numero(pontoFixoX), numero(pontoFixoY),
+                        numero(angulo)));
+        controles.add(linhaPontoFixo);
 
-        for (int i = 0; i < vertices.length; i++) {
-            PontoHomogeneo ponto = new PontoHomogeneo(
-                vertices[i][0], vertices[i][1], 1
-            );
+        JPanel linhaComposicao = linha("Composição", new JLabel("Translação → rotação → escala"));
+        adicionarBotao(linhaComposicao, "Aplicar", () -> {
+            double[][] matriz = aplicador.comporTransformacoes(
+                    MatrizesTransformacao.translacao(
+                            numero(translacaoX), numero(translacaoY)),
+                    MatrizesTransformacao.rotacao(numero(angulo)),
+                    MatrizesTransformacao.escala(numero(escalaX), numero(escalaY)));
+            aplicador.aplicarMatrizComposta(matriz);
+        });
+        adicionarBotao(linhaComposicao, "Restaurar original", () -> {
+            aplicador.inicializarPoligono(new Poligono(List.of(
+                    new Ponto(-80, -50),
+                    new Ponto(80, -50),
+                    new Ponto(80, 50),
+                    new Ponto(-80, 50))));
+            aplicador.atualizarDesenhoNaTela();
+        });
+        controles.add(linhaComposicao);
+        organizarGrupos(controles);
+        controles.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent evento) {
+                organizarGrupos(controles);
+            }
+        });
+        return controles;
+    }
 
-            PontoHomogeneo resultado =
-                OperacoesMatriciais.multiplicarMatrizPorPonto(
-                    matriz, ponto
-                );
-
-            PontoHomogeneo normalizado =
-                new PontoHomogeneo(
-                    resultado.x / resultado.w,
-                    resultado.y / resultado.w,
-                    1
-                );
-
-            transformados[i][0] = normalizado.x;
-            transformados[i][1] = normalizado.y;
+    private void organizarGrupos(JPanel controles) {
+        int larguraGrupo = 0;
+        for (java.awt.Component grupo : controles.getComponents()) {
+            larguraGrupo = Math.max(larguraGrupo, grupo.getPreferredSize().width);
         }
+        int largura = controles.getWidth() > 0
+                ? controles.getWidth() : tela.getPreferredSize().width;
+        int colunas = Math.max(1, Math.min(3, (largura - 4) / (larguraGrupo + 8)));
+        if (Integer.valueOf(colunas).equals(controles.getClientProperty("colunas"))) {
+            return;
+        }
+        controles.putClientProperty("colunas", colunas);
 
-        // Polígono transformado em verde.
-        desenharPoligono(
-            g2, transformados, centroX, centroY, Color.GREEN.darker()
-        );
-
-        g2.dispose();
+        GridBagLayout layout = (GridBagLayout) controles.getLayout();
+        layout.columnWidths = new int[colunas];
+        java.util.Arrays.fill(layout.columnWidths, larguraGrupo + 8);
+        GridBagConstraints restricoes = new GridBagConstraints();
+        restricoes.fill = GridBagConstraints.BOTH;
+        restricoes.weightx = 1;
+        restricoes.insets = new Insets(4, 4, 4, 4);
+        for (int i = 0; i < controles.getComponentCount(); i++) {
+            restricoes.gridx = i % colunas;
+            restricoes.gridy = i / colunas;
+            restricoes.gridwidth = i == controles.getComponentCount() - 1
+                    ? colunas - restricoes.gridx : 1;
+            layout.setConstraints(controles.getComponent(i), restricoes);
+        }
+        controles.revalidate();
+        controles.repaint();
     }
 
-    private void desenharEixos(Graphics2D g2, int cx, int cy) {
-        g2.setColor(Color.LIGHT_GRAY);
-
-        g2.drawLine(0, cy, getWidth(), cy);
-        g2.drawLine(cx, 0, cx, getHeight());
-
-        g2.setColor(Color.BLACK);
-        g2.drawString("X", getWidth() - 20, cy - 10);
-        g2.drawString("Y", cx + 10, 20);
-        g2.drawString("(0,0)", cx + 5, cy + 15);
+    private JPanel linha(String titulo, JComponent... componentes) {
+        JPanel linha = new JPanel(new BorderLayout(6, 6));
+        linha.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder(titulo),
+                BorderFactory.createEmptyBorder(2, 4, 4, 4)));
+        JPanel campos = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 2));
+        for (JComponent componente : componentes) {
+            campos.add(componente);
+        }
+        if (componentes.length > 0) {
+            linha.add(campos, BorderLayout.CENTER);
+        }
+        JPanel botoes = new JPanel(componentes.length == 0
+                ? new GridLayout(0, 2, 6, 6)
+                : new FlowLayout(FlowLayout.CENTER, 6, 2));
+        linha.add(botoes, BorderLayout.SOUTH);
+        return linha;
     }
 
-    private void desenharPoligono(
-        Graphics2D g2,
-        double[][] pontos,
-        int cx,
-        int cy,
-        Color cor
-    ) {
-        Polygon poligono = new Polygon();
+    private static JPanel rotuloCampo(String rotulo, JTextField campo) {
+        JPanel painel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+        painel.add(new JLabel(rotulo));
+        painel.add(campo);
+        return painel;
+    }
 
-        for (double[] ponto : pontos) {
-            int x = cx + (int) Math.round(
-                ponto[0] * ESCALA_TELA
-            );
+    private void adicionarBotao(JPanel painel, String rotulo, Runnable acao) {
+        JButton botao = new JButton(rotulo);
+        botao.addActionListener(evento -> executar(acao));
+        JPanel botoes = (JPanel) ((BorderLayout) painel.getLayout())
+                .getLayoutComponent(BorderLayout.SOUTH);
+        botoes.add(botao);
+    }
 
-            int y = cy - (int) Math.round(
-                ponto[1] * ESCALA_TELA
-            );
-
-            poligono.addPoint(x, y);
+    private void executar(Runnable acao) {
+        try {
+            acao.run();
+            status.setText("Transformação aplicada a partir do polígono original.");
+        } catch (IllegalArgumentException | IllegalStateException erro) {
+            status.setText("Não foi possível aplicar a transformação: " + erro.getMessage());
         }
+    }
 
-        g2.setColor(cor);
-        g2.setStroke(new BasicStroke(3));
-        g2.drawPolygon(poligono);
-
-        for (int i = 0; i < poligono.npoints; i++) {
-            g2.fillOval(
-                poligono.xpoints[i] - 4,
-                poligono.ypoints[i] - 4,
-                8, 8
-            );
+    private static double numero(JTextField campo) {
+        try {
+            double valor = Double.parseDouble(campo.getText().trim().replace(',', '.'));
+            if (Double.isFinite(valor)) {
+                return valor;
+            }
+        } catch (NumberFormatException erro) {
+            throw new IllegalArgumentException("Informe um número real finito.");
         }
+        throw new IllegalArgumentException("Informe um número real finito.");
     }
 
     public static void main(String[] args) {
-
         SwingUtilities.invokeLater(() -> {
-
-            TesteVisualTransformacoes painel =
-                new TesteVisualTransformacoes();
-
-            String[] opcoes = {
-                "Identidade",
-                "Translação",
-                "Escala",
-                "Rotação 45°",
-                "Reflexão eixo X",
-                "Reflexão eixo Y",
-                "Reflexão origem",
-                "Reflexão Y = X",
-                "Cisalhamento X",
-                "Cisalhamento Y"
-            };
-
-            JComboBox<String> seletor =
-                new JComboBox<>(opcoes);
-
-            seletor.addActionListener(e -> {
-
-                String escolha = (String) seletor.getSelectedItem();
-
-                double[][] m = switch (escolha) {
-                    case "Translação" ->
-                        MatrizesTransformacao.translacao(100, 50);
-
-                    case "Escala" ->
-                        MatrizesTransformacao.escala(1.5, 0.7);
-
-                    case "Rotação 45°" ->
-                        MatrizesTransformacao.rotacao(45);
-
-                    case "Reflexão eixo X" ->
-                        MatrizesTransformacao.reflexaoEixoX();
-
-                    case "Reflexão eixo Y" ->
-                        MatrizesTransformacao.reflexaoEixoY();
-
-                    case "Reflexão origem" ->
-                        MatrizesTransformacao.reflexaoOrigem();
-
-                    case "Reflexão Y = X" ->
-                        MatrizesTransformacao.reflexaoRetaYX();
-
-                    case "Cisalhamento X" ->
-                        MatrizesTransformacao.cisalhamentoX(0.7);
-
-                    case "Cisalhamento Y" ->
-                        MatrizesTransformacao.cisalhamentoY(0.7);
-
-                    default -> new double[][] {
-                        {1, 0, 0},
-                        {0, 1, 0},
-                        {0, 0, 1}
-                    };
-                };
-
-                painel.aplicarTransformacao(m);
-            });
-
-            JFrame janela = new JFrame(
-                "Teste visual - Transformações Geométricas 2D"
-            );
-
-            janela.setLayout(new BorderLayout());
-
-            JPanel topo = new JPanel();
-            topo.add(new JLabel("Escolha a transformação:"));
-            topo.add(seletor);
-
-            janela.add(topo, BorderLayout.NORTH);
-            janela.add(painel, BorderLayout.CENTER);
-
-            JLabel legenda = new JLabel(
-                "Azul: original | Verde: transformado",
-                SwingConstants.CENTER
-            );
-
-            janela.add(legenda, BorderLayout.SOUTH);
-
+            JFrame janela = new JFrame("Transformações geométricas 2D");
             janela.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            janela.setContentPane(new TesteVisualTransformacoes());
             janela.pack();
             janela.setLocationRelativeTo(null);
             janela.setVisible(true);
